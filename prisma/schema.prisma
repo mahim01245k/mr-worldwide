@@ -1,0 +1,52 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  roomCode  String   @unique
+  state     Json     // Full GameState serialized as JSON
+  phase     String   @default("waiting")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  finishedAt DateTime?
+
+  players GamePlayer[]
+
+  @@index([roomCode])
+  @@index([phase])
+}
+
+model GamePlayer {
+  id         String  @id @default(cuid())
+  gameId     String
+  socketId   String
+  name       String
+  color      String
+  avatar     String
+  isHost     Boolean @default(false)
+  isBankrupt Boolean @default(false)
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@index([socketId])
+}
+
+model GameLog {
+  id        String   @id @default(cuid())
+  gameId    String
+  type      String
+  message   String
+  playerId  String?
+  amount    Int?
+  createdAt DateTime @default(now())
+
+  @@index([gameId])
+}
