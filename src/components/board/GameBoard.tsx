@@ -86,7 +86,7 @@ function TileCard({
           x={0} y={0}
           width={width} height={height}
           fill={tileColor}
-          fillOpacity={tile.type === "property" ? 0 : 0.15}
+          fillOpacity={0.15}
           rx={3}
         />
       )}

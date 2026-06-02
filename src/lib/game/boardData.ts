@@ -239,14 +239,13 @@ export const BOARD_TILES: BoardTile[] = [
   },
   {
     id: 14,
-    type: "property",
+    type: "utility",
     name: "Gas Company",
     subname: "Utility",
     flag: "⛽",
     price: 150,
     position: "right",
     index: 1,
-    type: "utility",
     color: "none",
   },
   {
