@@ -17,7 +17,7 @@ export interface Player {
   avatar: string;
   housesOwned: number;
   hotelsOwned: number;
-  lastDice?: [number, number];
+  lastDice: [number, number];
   consecutiveDoubles: number;
 }
 

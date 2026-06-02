@@ -24,6 +24,7 @@ export function createGame(roomCode: string, hostId: string, hostName: string): 
     housesOwned: 0,
     hotelsOwned: 0,
     consecutiveDoubles: 0,
+    lastDice: [1, 1],
   };
 
   return {
@@ -72,6 +73,7 @@ export function addPlayerToGame(state: GameState, playerId: string, playerName: 
     housesOwned: 0,
     hotelsOwned: 0,
     consecutiveDoubles: 0,
+    lastDice: [1, 1],
   };
 
   return {
@@ -93,6 +95,17 @@ export function startGame(state: GameState): GameState {
   };
 }
 
+function sendToJail(player: Player): Player {
+  return {
+    ...player,
+    position: 23,
+    inJail: true,
+    jailTurns: 0,
+    consecutiveDoubles: 0,
+    lastDice: player.lastDice ?? [1, 1],
+  };
+}
+
 export function rollDice(state: GameState, playerId: string): GameState {
   if (state.phase !== "rolling") throw new Error("Not time to roll");
   const currentPlayer = state.players[state.currentPlayerIndex];
@@ -103,7 +116,8 @@ export function rollDice(state: GameState, playerId: string): GameState {
   const isDouble = die1 === die2;
   const total = die1 + die2;
 
-  let updatedPlayer = {
+  // Build updated player as a full Player object to avoid inference issues
+  let updatedPlayer: Player = {
     ...currentPlayer,
     lastDice: [die1, die2] as [number, number],
     consecutiveDoubles: isDouble ? currentPlayer.consecutiveDoubles + 1 : 0,
@@ -111,16 +125,16 @@ export function rollDice(state: GameState, playerId: string): GameState {
 
   // Three doubles = go to jail
   if (updatedPlayer.consecutiveDoubles >= 3) {
-    updatedPlayer = sendToJail(updatedPlayer);
+    const jailedPlayer: Player = sendToJail(updatedPlayer);
     const players = state.players.map((p) =>
-      p.id === playerId ? updatedPlayer : p
+      p.id === playerId ? jailedPlayer : p
     );
     return {
       ...state,
       players,
       diceValues: [die1, die2],
       diceRolled: true,
-      phase: "rolling", // next player
+      phase: "rolling",
       log: [
         ...state.log,
         createLog("jail", `${currentPlayer.name} rolled 3 doubles and goes to jail!`, playerId),
@@ -134,7 +148,6 @@ export function rollDice(state: GameState, playerId: string): GameState {
     if (isDouble) {
       updatedPlayer = { ...updatedPlayer, inJail: false, jailTurns: 0 };
     } else if (currentPlayer.jailTurns >= 2) {
-      // Force pay fine
       updatedPlayer = {
         ...updatedPlayer,
         cash: updatedPlayer.cash - 50,
@@ -163,7 +176,7 @@ export function rollDice(state: GameState, playerId: string): GameState {
     p.id === playerId ? updatedPlayer : p
   );
 
-  const newState = {
+  const newState: GameState = {
     ...state,
     players,
     diceValues: [die1, die2],
@@ -192,7 +205,7 @@ function processLanding(state: GameState, playerId: string, position: number): G
 
   switch (tile.type) {
     case "start":
-      return state;
+      return advanceTurn(state);
 
     case "property":
     case "airport":
@@ -203,7 +216,6 @@ function processLanding(state: GameState, playerId: string, position: number): G
       } else if (owned.ownerId === playerId) {
         return advanceTurn(state);
       } else if (!owned.isMortgaged) {
-        // Pay rent
         return payRent(state, playerId, position, owned);
       }
       return advanceTurn(state);
@@ -252,13 +264,14 @@ function processLanding(state: GameState, playerId: string, position: number): G
       };
     }
 
-    case "vacation":
-      return {
+    case "vacation": {
+      const vacationState: GameState = {
         ...state,
         log: [...state.log, createLog("system", `${currentPlayer.name} is on vacation!`, playerId)],
-        updatedAt: advanceTurn(state).updatedAt,
-        ...advanceTurn(state),
+        updatedAt: Date.now(),
       };
+      return advanceTurn(vacationState);
+    }
 
     default:
       return advanceTurn(state);
@@ -294,8 +307,6 @@ function payRent(
   } else {
     const rentLevel = ownership.hasHotel ? 5 : ownership.houses;
     rent = tile.rentLevels?.[rentLevel] || tile.baseRent || 0;
-
-    // Check if owner has all properties in group (double rent with no buildings)
     if (rentLevel === 0 && tile.group) {
       const groupTiles = BOARD_TILES.filter((t) => t.group === tile.group);
       const ownsAll = groupTiles.every((t) =>
@@ -313,7 +324,7 @@ function payRent(
     return p;
   });
 
-  const newState = {
+  const newState: GameState = {
     ...state,
     players,
     log: [
@@ -347,7 +358,7 @@ function payTax(state: GameState, playerId: string, amount: number, taxName: str
     p.id === playerId ? { ...p, cash: p.cash - actualAmount } : p
   );
 
-  const newState = {
+  return advanceTurn({
     ...state,
     players,
     freeParkingPot,
@@ -356,9 +367,7 @@ function payTax(state: GameState, playerId: string, amount: number, taxName: str
       createLog("tax", `${player.name} paid $${actualAmount} for ${taxName}`, playerId, actualAmount),
     ],
     updatedAt: Date.now(),
-  };
-
-  return advanceTurn(newState);
+  });
 }
 
 export function buyProperty(state: GameState, playerId: string): GameState {
@@ -384,7 +393,7 @@ export function buyProperty(state: GameState, playerId: string): GameState {
       : p
   );
 
-  const newState = {
+  return advanceTurn({
     ...state,
     players,
     properties: [...state.properties, newOwnership],
@@ -394,9 +403,7 @@ export function buyProperty(state: GameState, playerId: string): GameState {
       createLog("purchase", `${player.name} bought ${tile.name} for $${tile.price}`, playerId, tile.price),
     ],
     updatedAt: Date.now(),
-  };
-
-  return advanceTurn(newState);
+  });
 }
 
 export function startAuction(state: GameState, tileId: number): GameState {
@@ -486,17 +493,14 @@ export function buildHouse(state: GameState, playerId: string, tileId: number): 
   const cost = tile.houseCost || 100;
   if (player.cash < cost) throw new Error("Not enough cash");
 
-  const players = state.players.map((p) =>
-    p.id === playerId ? { ...p, cash: p.cash - cost } : p
-  );
-  const properties = state.properties.map((p) =>
-    p.tileId === tileId ? { ...p, houses: p.houses + 1 } : p
-  );
-
   return {
     ...state,
-    players,
-    properties,
+    players: state.players.map((p) =>
+      p.id === playerId ? { ...p, cash: p.cash - cost } : p
+    ),
+    properties: state.properties.map((p) =>
+      p.tileId === tileId ? { ...p, houses: p.houses + 1 } : p
+    ),
     log: [...state.log, createLog("upgrade", `${player.name} built a house on ${tile.name}`, playerId, cost)],
     updatedAt: Date.now(),
   };
@@ -512,17 +516,14 @@ export function buildHotel(state: GameState, playerId: string, tileId: number): 
   const cost = tile.hotelCost || 100;
   if (player.cash < cost) throw new Error("Not enough cash");
 
-  const players = state.players.map((p) =>
-    p.id === playerId ? { ...p, cash: p.cash - cost } : p
-  );
-  const properties = state.properties.map((p) =>
-    p.tileId === tileId ? { ...p, houses: 0, hasHotel: true } : p
-  );
-
   return {
     ...state,
-    players,
-    properties,
+    players: state.players.map((p) =>
+      p.id === playerId ? { ...p, cash: p.cash - cost } : p
+    ),
+    properties: state.properties.map((p) =>
+      p.tileId === tileId ? { ...p, houses: 0, hasHotel: true } : p
+    ),
     log: [...state.log, createLog("upgrade", `${player.name} built a hotel on ${tile.name}!`, playerId, cost)],
     updatedAt: Date.now(),
   };
@@ -534,18 +535,16 @@ export function mortgageProperty(state: GameState, playerId: string, tileId: num
   if (!ownership || ownership.isMortgaged) throw new Error("Cannot mortgage");
 
   const mortgageValue = tile.mortgageValue || Math.floor((tile.price || 0) / 2);
-  const players = state.players.map((p) =>
-    p.id === playerId ? { ...p, cash: p.cash + mortgageValue } : p
-  );
-  const properties = state.properties.map((p) =>
-    p.tileId === tileId ? { ...p, isMortgaged: true } : p
-  );
-
   const player = state.players.find((p) => p.id === playerId)!;
+
   return {
     ...state,
-    players,
-    properties,
+    players: state.players.map((p) =>
+      p.id === playerId ? { ...p, cash: p.cash + mortgageValue } : p
+    ),
+    properties: state.properties.map((p) =>
+      p.tileId === tileId ? { ...p, isMortgaged: true } : p
+    ),
     log: [...state.log, createLog("system", `${player.name} mortgaged ${tile.name} for $${mortgageValue}`, playerId, mortgageValue)],
     updatedAt: Date.now(),
   };
@@ -554,9 +553,9 @@ export function mortgageProperty(state: GameState, playerId: string, tileId: num
 export function processCard(state: GameState, playerId: string): GameState {
   if (!state.currentCard) return advanceTurn(state);
 
-  const { card, type } = state.currentCard;
+  const { card } = state.currentCard;
   const player = state.players.find((p) => p.id === playerId)!;
-  let updatedState = { ...state, currentCard: undefined };
+  let updatedState: GameState = { ...state, currentCard: undefined };
 
   switch (card.action) {
     case "collect":
@@ -579,7 +578,7 @@ export function processCard(state: GameState, playerId: string): GameState {
       };
       break;
 
-    case "collect-from-all":
+    case "collect-from-all": {
       const collected = card.amount * (state.players.length - 1);
       updatedState = {
         ...updatedState,
@@ -590,6 +589,7 @@ export function processCard(state: GameState, playerId: string): GameState {
         log: [...updatedState.log, createLog("card", `${player.name} collected $${card.amount} from each player!`, playerId, collected)],
       };
       break;
+    }
 
     case "go-to-prison":
       updatedState = {
@@ -621,7 +621,7 @@ export function processCard(state: GameState, playerId: string): GameState {
       };
       break;
 
-    case "move-back":
+    case "move-back": {
       const newPos = Math.max(0, player.position - card.amount);
       updatedState = {
         ...updatedState,
@@ -631,13 +631,10 @@ export function processCard(state: GameState, playerId: string): GameState {
         log: [...updatedState.log, createLog("card", `${player.name} moves back ${card.amount} spaces!`, playerId)],
       };
       break;
+    }
   }
 
   return advanceTurn({ ...updatedState, updatedAt: Date.now() });
-}
-
-function sendToJail(player: Player): Player {
-  return { ...player, position: 23, inJail: true, jailTurns: 0, consecutiveDoubles: 0 };
 }
 
 function handleBankruptcy(state: GameState, bankruptId: string, creditorId?: string): GameState {
@@ -646,7 +643,6 @@ function handleBankruptcy(state: GameState, bankruptId: string, creditorId?: str
     p.id === bankruptId ? { ...p, isBankrupt: true, cash: 0 } : p
   );
 
-  // Transfer properties to creditor or bank
   const properties = creditorId
     ? state.properties.map((p) =>
         p.ownerId === bankruptId ? { ...p, ownerId: creditorId } : p
