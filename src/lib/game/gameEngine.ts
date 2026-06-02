@@ -387,12 +387,12 @@ export function buyProperty(state: GameState, playerId: string): GameState {
     purchasePrice: tile.price,
   };
 
-  const players = state.players.map((p) =>
-    p.id === playerId
-      ? { ...p, cash: p.cash - tile.price, properties: [...p.properties, tile.id] }
-      : p
-  );
-
+  const price = tile.price ?? 0;
+const players = state.players.map((p) =>
+  p.id === playerId
+    ? { ...p, cash: p.cash - price, properties: [...p.properties, tile.id] }
+    : p
+);
   return advanceTurn({
     ...state,
     players,
