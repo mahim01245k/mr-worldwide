@@ -249,30 +249,68 @@ function getTilePosition(tile: BoardTile): [number, number, number, number, numb
   const rightCount = BOARD_TILES.filter((t) => t.position === "right").length;
   const leftCount = BOARD_TILES.filter((t) => t.position === "left").length;
 
+  let x = 0;
+  let y = 0;
+  let w = tw;
+  let h = th;
+  let rot = 0;
+
   if (tile.position === "bottom") {
-    if (tile.index === 0) return [0, BOARD_SIZE - th, cs, th, 0];
-    if (tile.index >= 1 && tile.index <= 11) {
-      return [cs + (tile.index - 1) * tw, BOARD_SIZE - th, tw, th, 0];
+    if (tile.index === 0) {
+      x = 0;
+      y = BOARD_SIZE - th;
+      w = cs;
+      h = th;
+      rot = 0;
+    } else if (tile.index >= 1 && tile.index <= 11) {
+      x = cs + (tile.index - 1) * tw;
+      y = BOARD_SIZE - th;
+      w = tw;
+      h = th;
+      rot = 0;
+    } else if (tile.index === 12) {
+      x = BOARD_SIZE - cs;
+      y = BOARD_SIZE - th;
+      w = cs;
+      h = th;
+      rot = 0;
     }
-    if (tile.index === 12) return [BOARD_SIZE - cs, BOARD_SIZE - th, cs, th, 0];
   }
 
   if (tile.position === "right") {
     const step = (BOARD_SIZE - cs * 2) / rightCount;
-    return [BOARD_SIZE - th, cs + tile.index * step, th, step, 90];
+    const index = rightCount - 1 - tile.index;
+    x = BOARD_SIZE - th;
+    y = cs + index * step;
+    w = th;
+    h = step;
+    rot = 90;
   }
 
   if (tile.position === "top") {
     const step = (BOARD_SIZE - cs * 2) / (topCount - 1);
-    return [cs + (topCount - 1 - tile.index) * step, 0, step, th, 180];
+    x = cs + (topCount - 1 - tile.index) * step;
+    y = 0;
+    w = step;
+    h = th;
+    rot = 180;
   }
 
   if (tile.position === "left") {
     const step = (BOARD_SIZE - cs * 2) / leftCount;
-    return [0, cs + tile.index * step, th, step, 270];
+    x = 0;
+    y = cs + tile.index * step;
+    w = th;
+    h = step;
+    rot = 270;
   }
 
-  return [0, 0, tw, th, 0];
+  // Flip the board vertically to move the start tile to top-left and make the path clockwise.
+  y = BOARD_SIZE - y - h;
+  if (tile.position === "bottom") rot = 180;
+  if (tile.position === "top") rot = 0;
+
+  return [x, y, w, h, rot];
 }
 
 function getTokenCenter(tileId: number): [number, number] {
