@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useSocket } from "@/hooks/useSocket";
 import { GameBoard } from "@/components/board/GameBoard";
-import { TileDetail } from "@/components/board/TileDetail";
 import { Notifications } from "@/components/ui/Notifications";
 import { PLAYER_COLOR_HEX } from "@/types/game";
 import { BOARD_TILES } from "@/lib/game/boardData";
@@ -76,7 +75,7 @@ function GameOverModal() {
 
 // ── Main Game Page ──────────────────────────────────────────────────────────
 export default function GamePage() {
-  const { gameState, myPlayerId, roomCode, isConnected, selectedTileId } = useGameStore();
+  const { gameState, myPlayerId, roomCode, isConnected } = useGameStore();
   const { rollDice, buyProperty, declinePurchase, auctionBid, processCard,
           useJailCard, payJailFine, respondTrade, sendChat, buildHouse, buildHotel,
           mortgageProperty, proposeTrade } = useSocket();
@@ -131,10 +130,178 @@ export default function GamePage() {
     setShowTradeForm(false);
   };
 
+  const renderCenterActionPanel = () => {
+    if (gameState.phase === "buying" && isMyTurn && myTile) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="w-full max-w-md bg-[#0f0d20]/95 border border-white/10 rounded-3xl p-4 shadow-2xl"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-3xl">{myTile.flag || "🏙️"}</span>
+            <div>
+              <p className="text-white font-bold">{myTile.name}</p>
+              <p className="text-slate-400 text-xs">Buy for ${myTile.price} or end your turn</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button
+              onClick={() => declinePurchase()}
+              className="px-4 py-3 rounded-2xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm"
+              whileTap={{ scale: 0.97 }}
+            >
+              End Turn
+            </motion.button>
+            <motion.button
+              onClick={() => buyProperty()}
+              disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
+              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm"
+              whileTap={{ scale: 0.97 }}
+            >
+              Buy for ${myTile.price}
+            </motion.button>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (gameState.phase === "auction" && gameState.currentAuction) {
+      const auctionTile = BOARD_TILES.find((t) => t.id === gameState.currentAuction.tileId);
+      const minBid = gameState.currentAuction.currentBid + 10;
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="w-full max-w-md bg-amber-950/95 border border-amber-700/40 rounded-3xl p-4 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-amber-300 font-bold text-sm">🔨 Auction: {auctionTile?.name}</span>
+            <span className="text-white font-bold">${gameState.currentAuction.currentBid}</span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={bidAmount || minBid}
+              min={minBid}
+              step={10}
+              onChange={(e) => setBidAmount(parseInt(e.target.value) || minBid)}
+              className="flex-1 bg-[#0f0d20] border border-white/10 rounded-2xl px-3 py-3 text-white text-sm"
+            />
+            <motion.button
+              onClick={() => auctionBid(bidAmount || minBid)}
+              disabled={(myPlayer?.cash ?? 0) < (bidAmount || minBid)}
+              className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold px-4 rounded-2xl text-sm"
+              whileTap={{ scale: 0.97 }}
+            >
+              Bid
+            </motion.button>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (gameState.phase === "card" && gameState.currentCard) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className={`w-full max-w-md border rounded-3xl p-4 shadow-2xl ${gameState.currentCard.type === "treasure" ? "bg-amber-950/95 border-amber-700/40" : "bg-purple-950/95 border-purple-700/40"}`}
+        >
+          <div className="text-3xl mb-3 text-center">{gameState.currentCard.type === "treasure" ? "💰" : "🎴"}</div>
+          <p className="text-white text-sm text-center mb-4">{gameState.currentCard.card.text}</p>
+          {isMyTurn && (
+            <motion.button
+              onClick={() => processCard()}
+              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 rounded-2xl text-sm"
+              whileTap={{ scale: 0.97 }}
+            >
+              OK, Got it!
+            </motion.button>
+          )}
+        </motion.div>
+      );
+    }
+
+    if (myPlayer?.inJail && isMyTurn && gameState.phase === "rolling") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="w-full max-w-md bg-slate-900/95 border border-slate-700/50 rounded-3xl p-4 shadow-2xl"
+        >
+          <p className="text-white font-bold text-center mb-3">🔒 You're in Jail! (Turn {myPlayer.jailTurns}/3)</p>
+          <div className="grid grid-cols-2 gap-3">
+            {myPlayer.jailFreeCards > 0 && (
+              <motion.button
+                onClick={() => useJailCard()}
+                className="px-4 py-3 rounded-2xl bg-yellow-600 hover:bg-yellow-500 text-white font-bold text-sm"
+                whileTap={{ scale: 0.97 }}
+              >
+                Use Jail Card
+              </motion.button>
+            )}
+            {myPlayer.cash >= 50 && (
+              <motion.button
+                onClick={() => payJailFine()}
+                className="px-4 py-3 rounded-2xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm"
+                whileTap={{ scale: 0.97 }}
+              >
+                Pay $50
+              </motion.button>
+            )}
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (gameState.phase === "trading" && gameState.pendingTrade) {
+      const isTarget = gameState.pendingTrade.toPlayerId === myPlayerId;
+      const fromPlayer = gameState.players.find((p) => p.id === gameState.pendingTrade.fromPlayerId);
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="w-full max-w-md bg-blue-950/95 border border-blue-700/40 rounded-3xl p-4 shadow-2xl"
+        >
+          {isTarget ? (
+            <>
+              <p className="text-blue-400 font-bold text-sm mb-3">🤝 Trade offer from {fromPlayer?.name}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button
+                  onClick={() => respondTrade(true)}
+                  className="px-4 py-3 rounded-2xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm"
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Accept
+                </motion.button>
+                <motion.button
+                  onClick={() => respondTrade(false)}
+                  className="px-4 py-3 rounded-2xl bg-red-700 hover:bg-red-600 text-white font-bold text-sm"
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Decline
+                </motion.button>
+              </div>
+            </>
+          ) : (
+            <p className="text-slate-400 text-sm text-center">Waiting for trade response...</p>
+          )}
+        </motion.div>
+      );
+    }
+
+    return null;
+  };
+
   // Current tile for buying panel
   const myPosition = myPlayer?.position ?? 0;
   const myTile = BOARD_TILES.find(t => t.id === myPosition);
-  const selectedTile = selectedTileId !== null ? BOARD_TILES.find(t => t.id === selectedTileId) : null;
 
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{ background: "#12102a" }}>
@@ -233,7 +400,6 @@ export default function GamePage() {
           <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
 
   <GameBoard />
-  <TileDetail />
 
   {/* Center Dice Overlay */}
   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -268,135 +434,12 @@ export default function GamePage() {
         {rolling ? "Rolling..." : isMyTurn && gameState.phase === "rolling" ? "Roll Dice 🎲" : "Waiting..."}
       </motion.button>
 
+      {renderCenterActionPanel()}
+
     </div>
   </div>
 
 </div>
-
-          {/* Bottom controls */}
-          <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
-            <div className="flex items-start gap-6 max-w-3xl mx-auto">
-              {/* Dice */}
-              
-
-              {/* Action area */}
-              <div className="flex-1">
-                <AnimatePresence mode="wait">
-                  {/* BUYING */}
-                  {gameState.phase === "buying" && isMyTurn && myTile && (
-                    <motion.div key="buy" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-[#0f0d20] border border-white/10 rounded-xl p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl">{myTile.flag || "🏙️"}</span>
-                        <div>
-                          <p className="text-white font-bold">{myTile.name}</p>
-                          <p className="text-slate-400 text-xs">{myTile.subname} • ${myTile.price}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => buyProperty()} disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
-                          className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold py-2 rounded-lg text-sm">
-                          Buy for ${myTile.price}
-                        </button>
-                        <button onClick={() => declinePurchase()}
-                          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm">
-                          Auction 🔨
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* AUCTION */}
-                  {gameState.phase === "auction" && gameState.currentAuction && (
-                    <motion.div key="auction" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-amber-950/40 border border-amber-700/40 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-amber-400 font-bold text-sm">🔨 Auction: {BOARD_TILES.find(t => t.id === gameState.currentAuction!.tileId)?.name}</span>
-                        <span className="text-white font-bold">${gameState.currentAuction.currentBid}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <input type="number" value={bidAmount} min={gameState.currentAuction.currentBid + 10} step={10}
-                          onChange={e => setBidAmount(parseInt(e.target.value))}
-                          className="flex-1 bg-[#0f0d20] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm" />
-                        <button onClick={() => auctionBid(bidAmount)} disabled={(myPlayer?.cash ?? 0) < bidAmount}
-                          className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold px-4 rounded-lg text-sm">
-                          Bid
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* CARD */}
-                  {gameState.phase === "card" && gameState.currentCard && (
-                    <motion.div key="card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className={`border rounded-xl p-4 ${gameState.currentCard.type === "treasure" ? "bg-amber-950/30 border-amber-700/40" : "bg-purple-950/30 border-purple-700/40"}`}>
-                      <div className="text-3xl mb-2 text-center">{gameState.currentCard.type === "treasure" ? "💰" : "🎴"}</div>
-                      <p className="text-white text-sm text-center mb-3">{gameState.currentCard.card.text}</p>
-                      {isMyTurn && (
-                        <button onClick={() => processCard()}
-                          className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 rounded-lg text-sm">
-                          OK, Got it!
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* JAIL */}
-                  {myPlayer?.inJail && isMyTurn && gameState.phase === "rolling" && (
-                    <motion.div key="jail" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
-                      <p className="text-white font-bold text-center mb-3">🔒 You're in Jail! (Turn {myPlayer.jailTurns}/3)</p>
-                      <div className="flex gap-2">
-                        {myPlayer.jailFreeCards > 0 && (
-                          <button onClick={() => useJailCard()} className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 rounded-lg text-sm">
-                            Use Free Card 🎫
-                          </button>
-                        )}
-                        {myPlayer.cash >= 50 && (
-                          <button onClick={() => payJailFine()} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm">
-                            Pay $50
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* TRADE */}
-                  {gameState.phase === "trading" && gameState.pendingTrade && (
-                    <motion.div key="trade" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-blue-950/30 border border-blue-700/40 rounded-xl p-4">
-                      {gameState.pendingTrade.toPlayerId === myPlayerId ? (
-                        <>
-                          <p className="text-blue-400 font-bold text-sm mb-2">🤝 Trade offer from {gameState.players.find(p => p.id === gameState.pendingTrade?.fromPlayerId)?.name}</p>
-                          <div className="flex gap-2">
-                            <button onClick={() => respondTrade(true)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg text-sm">Accept ✓</button>
-                            <button onClick={() => respondTrade(false)} className="flex-1 bg-red-700 hover:bg-red-600 text-white font-bold py-2 rounded-lg text-sm">Decline ✗</button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-slate-400 text-sm text-center">Waiting for trade response...</p>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* Selected tile info */}
-                  {selectedTile && !["buying","auction","card","trading"].includes(gameState.phase) && (
-                    <motion.div key="tileinfo" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-[#0f0d20] border border-white/10 rounded-xl p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{selectedTile.flag || "🏙️"}</span>
-                        <div>
-                          <p className="text-white font-bold text-sm">{selectedTile.name}</p>
-                          <p className="text-slate-400 text-xs">{selectedTile.subname} {selectedTile.price ? `• $${selectedTile.price}` : ""}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* ── RIGHT SIDEBAR ── */}
         <div className="w-72 flex flex-col border-l border-white/10 min-h-0" style={{ background: "#15132a" }}>

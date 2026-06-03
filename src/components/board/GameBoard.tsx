@@ -7,9 +7,9 @@ import { useGameStore } from "@/lib/store/gameStore";
 import { Player, PropertyOwnership } from "@/types/game";
 import { PLAYER_COLOR_HEX } from "@/types/game";
 
-const BOARD_SIZE = 660;
-const CORNER_SIZE = 80;
-const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 9; // ~55px per non-corner tile
+const BOARD_SIZE = 760;
+const CORNER_SIZE = 92;
+const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 9; // ~64px per non-corner tile
 const TILE_HEIGHT = CORNER_SIZE; // same height as corner
 
 interface TileProps {
@@ -286,7 +286,7 @@ export function GameBoard() {
     <div className="w-full h-full flex items-center justify-center">
       <svg
         viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`}
-        className="w-full h-full max-w-[660px] max-h-[660px]"
+        className="w-full h-full max-w-[760px] max-h-[760px]"
         style={{ filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.8))" }}
       >
         {/* Background */}
