@@ -440,6 +440,7 @@ export default function GamePage() {
   </div>
 
 </div>
+</div>
 
         {/* ── RIGHT SIDEBAR ── */}
         <div className="w-72 flex flex-col border-l border-white/10 min-h-0" style={{ background: "#15132a" }}>
