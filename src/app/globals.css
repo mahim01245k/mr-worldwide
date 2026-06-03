@@ -2,108 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #020817;
-  --foreground: #f8fafc;
-}
-
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  background: #0a0816;
+  color: #f8fafc;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2d2550; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3d3570; }
 
-/* Glassmorphism utility */
-.glass {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.08);
-}
-
-/* Glow effects */
-.glow-violet {
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3), 0 0 40px rgba(124, 58, 237, 0.1);
-}
-.glow-green {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-}
-
-/* Tile hover glow */
-.tile-hover {
-  transition: filter 0.15s ease;
-}
-.tile-hover:hover {
-  filter: brightness(1.2) drop-shadow(0 0 6px rgba(167, 139, 250, 0.4));
-}
-
-/* Dice animation */
-@keyframes diceShake {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  20% { transform: rotate(-15deg) scale(1.1); }
-  40% { transform: rotate(15deg) scale(0.95); }
-  60% { transform: rotate(-10deg) scale(1.05); }
-  80% { transform: rotate(5deg) scale(0.98); }
-}
-
-/* Board pulse */
-@keyframes boardPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
-/* Player token bounce */
-@keyframes tokenBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-/* Number counter animation */
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-count {
-  animation: countUp 0.3s ease forwards;
-}
-
-/* Mobile responsive overrides */
-@media (max-width: 1024px) {
-  .sidebar-hide {
-    display: none;
-  }
-}
-
-/* Focus ring for accessibility */
-:focus-visible {
-  outline: 2px solid rgba(124, 58, 237, 0.7);
-  outline-offset: 2px;
-}
-
-/* Selection color */
-::selection {
-  background: rgba(124, 58, 237, 0.3);
-  color: white;
-}
+/* Focus */
+:focus-visible { outline: 2px solid rgba(124,58,237,0.6); outline-offset: 2px; }
+::selection { background: rgba(124,58,237,0.3); color: white; }
