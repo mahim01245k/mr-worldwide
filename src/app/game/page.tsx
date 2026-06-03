@@ -230,7 +230,9 @@ export default function GamePage() {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
           {/* Board area */}
           <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
-            <GameBoard />
+            <GameBoard onRoll={function (): void {
+              throw new Error("Function not implemented.");
+            } } rolling={false} />
             <TileDetail />
           </div>
 
