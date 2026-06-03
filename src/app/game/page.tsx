@@ -1,4 +1,4 @@
-cat > /home/claude/mr-worldwide/src/app/game/page.tsx << 'ENDOFFILE'
+
 "use client";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
