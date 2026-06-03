@@ -231,9 +231,47 @@ export default function GamePage() {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
           {/* Board area */}
           <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
-            <GameBoard />
-            <TileDetail />
-          </div>
+
+  <GameBoard />
+  <TileDetail />
+
+  {/* Center Dice Overlay */}
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div className="pointer-events-auto flex flex-col items-center gap-3">
+      
+      <div className="flex gap-3">
+        <Die value={gameState.diceValues[0]} rolling={rolling} />
+        <Die value={gameState.diceValues[1]} rolling={rolling} />
+      </div>
+
+      {gameState.phase !== "waiting" && (
+        <p className="text-slate-400 text-xs text-center">
+          Total: <span className="text-white font-bold">
+            {gameState.diceValues[0] + gameState.diceValues[1]}
+          </span>
+          {gameState.diceValues[0] === gameState.diceValues[1] && (
+            <span className="text-yellow-400 ml-1">Double!</span>
+          )}
+        </p>
+      )}
+
+      <motion.button
+        onClick={handleRoll}
+        disabled={!canRoll || rolling}
+        className={
+          canRoll && !rolling
+            ? "px-6 py-2 rounded-lg font-bold text-sm bg-violet-600 hover:bg-violet-500 text-white"
+            : "px-6 py-2 rounded-lg font-bold text-sm bg-slate-800 text-slate-500 cursor-not-allowed"
+        }
+        whileTap={canRoll ? { scale: 0.95 } : {}}
+      >
+        {rolling ? "Rolling..." : isMyTurn && gameState.phase === "rolling" ? "Roll Dice 🎲" : "Waiting..."}
+      </motion.button>
+
+    </div>
+  </div>
+
+</div>
 
           {/* Bottom controls */}
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
