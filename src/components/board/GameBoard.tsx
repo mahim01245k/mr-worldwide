@@ -1,16 +1,17 @@
 "use client";
 // src/components/board/GameBoard.tsx
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BOARD_TILES, COLOR_HEX, BoardTile } from "@/lib/game/boardData";
 import { useGameStore } from "@/lib/store/gameStore";
 import { Player, PropertyOwnership } from "@/types/game";
 import { PLAYER_COLOR_HEX } from "@/types/game";
 
-const BOARD_SIZE = 760;
-const CORNER_SIZE = 92;
-const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 11; // ~60px per non-corner tile
-const TILE_HEIGHT = CORNER_SIZE; // same height as corner
+const BOARD_SIZE = 900;
+const CORNER_SIZE = 104;
+const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 11; // horizontal tile width for top/bottom rows
+const TILE_HEIGHT = CORNER_SIZE; // corner tile size and column tile width
+
 
 interface TileProps {
   tile: BoardTile;
@@ -240,43 +241,44 @@ function PlayerToken({ player, position, index, totalAtPosition }: {
   );
 }
 
-function getTilePosition(tileId: number): [number, number, number, number, number] {
+function getTilePosition(tile: BoardTile): [number, number, number, number, number] {
   const cs = CORNER_SIZE;
   const tw = TILE_WIDTH;
   const th = TILE_HEIGHT;
+  const topCount = BOARD_TILES.filter((t) => t.position === "top").length;
+  const rightCount = BOARD_TILES.filter((t) => t.position === "right").length;
+  const leftCount = BOARD_TILES.filter((t) => t.position === "left").length;
 
-  // Top row: 0 (corner) → 12 (corner)
-  if (tileId === 0) return [0, 0, cs, cs, 0]; // START (top-left)
-  if (tileId >= 1 && tileId <= 11) {
-    const idx = tileId;
-    return [cs + (idx - 1) * tw, 0, tw, th, 0];
-  }
-  if (tileId === 12) return [BOARD_SIZE - cs, 0, cs, cs, 0]; // top-right
-
-  // Right column: 13→22 (tiles are th wide, tw tall)
-  if (tileId >= 13 && tileId <= 22) {
-    const idx = tileId - 13;
-    return [BOARD_SIZE - th, cs + idx * tw, th, tw, 0];
-  }
-  if (tileId === 23) return [BOARD_SIZE - cs, BOARD_SIZE - cs, cs, cs, 0]; // bottom-right
-
-  // Bottom row: 24→34 (right to left)
-  if (tileId >= 24 && tileId <= 34) {
-    const idx = tileId - 24;
-    return [BOARD_SIZE - cs - th - idx * tw, BOARD_SIZE - th, tw, th, 0];
+  if (tile.position === "bottom") {
+    if (tile.index === 0) return [0, BOARD_SIZE - th, cs, th, 0];
+    if (tile.index >= 1 && tile.index <= 11) {
+      return [cs + (tile.index - 1) * tw, BOARD_SIZE - th, tw, th, 0];
+    }
+    if (tile.index === 12) return [BOARD_SIZE - cs, BOARD_SIZE - th, cs, th, 0];
   }
 
-  // Left column: 35→48 (bottom to top, tiles are th wide, tw tall)
-  if (tileId >= 35 && tileId <= 48) {
-    const idx = tileId - 35;
-    return [0, BOARD_SIZE - cs - th - idx * tw, th, tw, 0];
+  if (tile.position === "right") {
+    const step = (BOARD_SIZE - cs * 2) / rightCount;
+    return [BOARD_SIZE - th, cs + tile.index * step, th, step, 90];
+  }
+
+  if (tile.position === "top") {
+    const step = (BOARD_SIZE - cs * 2) / (topCount - 1);
+    return [cs + (topCount - 1 - tile.index) * step, 0, step, th, 180];
+  }
+
+  if (tile.position === "left") {
+    const step = (BOARD_SIZE - cs * 2) / leftCount;
+    return [0, cs + tile.index * step, th, step, 270];
   }
 
   return [0, 0, tw, th, 0];
 }
 
 function getTokenCenter(tileId: number): [number, number] {
-  const [x, y, w, h] = getTilePosition(tileId);
+  const tile = BOARD_TILES.find((t) => t.id === tileId);
+  if (!tile) return [0, 0];
+  const [x, y, w, h] = getTilePosition(tile);
   return [x + w / 2, y + h / 2];
 }
 
@@ -286,9 +288,10 @@ interface GameBoardProps {
   rolling?: boolean;
   isMyTurn?: boolean;
   phase?: string;
+  buyPanel?: ReactNode;
 }
 
-export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn = false, phase }: GameBoardProps = {}) {
+export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn = false, phase, buyPanel }: GameBoardProps = {}) {
   const { gameState, selectedTileId, selectTile } = useGameStore();
 
   const tiles = useMemo(() => BOARD_TILES, []);
@@ -312,7 +315,7 @@ export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn =
     <div className="w-full h-full flex items-center justify-center relative">
       <svg
         viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`}
-        className="w-full h-full max-w-[760px] max-h-[760px]"
+        className="w-full h-full max-w-[900px] max-h-[900px]"
         style={{ filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.8))" }}
       >
         {/* Background */}
@@ -372,7 +375,7 @@ export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn =
 
         {/* Render all tiles */}
         {tiles.map((tile) => {
-          const [x, y, w, h, rot] = getTilePosition(tile.id);
+          const [x, y, w, h, rot] = getTilePosition(tile);
           const ownership = properties.find((p) => p.tileId === tile.id);
           const playersOnTile = (playersByPosition[tile.id] || []);
 
@@ -429,7 +432,7 @@ export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn =
       </svg>
 
       {/* Dice overlay in center - compact */}
-      {gameState && canRoll && phase === "rolling" && (
+      {gameState && (phase === "rolling" || phase === "buying") && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -453,6 +456,11 @@ export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn =
               >
                 {rolling ? "Rolling..." : "Roll"}
               </motion.button>
+            )}
+            {buyPanel && (
+              <div className="w-full mt-3">
+                {buyPanel}
+              </div>
             )}
           </div>
         </motion.div>

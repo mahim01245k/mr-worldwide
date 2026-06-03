@@ -110,6 +110,29 @@ export default function GamePage() {
   const myTile = BOARD_TILES.find(t => t.id === myPosition);
   const selectedTile = selectedTileId !== null ? BOARD_TILES.find(t => t.id === selectedTileId) : null;
 
+  const buyPanel = gameState.phase === "buying" && isMyTurn && myTile ? (
+    <motion.div key="buy-overlay" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+      className="bg-[#0f0d20] border border-white/10 rounded-xl p-4 w-full">
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-3xl">{myTile.flag || "🏙️"}</span>
+        <div>
+          <p className="text-white font-bold">{myTile.name}</p>
+          <p className="text-slate-400 text-xs">{myTile.subname} • ${myTile.price}</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => buyProperty()} disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
+          className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold py-2 rounded-lg text-sm">
+          Buy for ${myTile.price}
+        </button>
+        <button onClick={() => declinePurchase()}
+          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm">
+          Auction 🔨
+        </button>
+      </div>
+    </motion.div>
+  ) : null;
+
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{ background: "#12102a" }}>
       <Notifications />
@@ -205,7 +228,7 @@ export default function GamePage() {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
           {/* Board area */}
           <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
-            <GameBoard onRoll={handleRoll} canRoll={canRoll} rolling={rolling} isMyTurn={isMyTurn} phase={gameState.phase} />
+            <GameBoard onRoll={handleRoll} canRoll={canRoll} rolling={rolling} isMyTurn={isMyTurn} phase={gameState.phase} buyPanel={buyPanel} />
             <TileDetail />
           </div>
 
@@ -214,31 +237,7 @@ export default function GamePage() {
             <div className="flex items-start gap-6 max-w-3xl mx-auto">
               <div className="flex-1">
                 <AnimatePresence mode="wait">
-                  {/* BUYING */}
-                  {gameState.phase === "buying" && isMyTurn && myTile && (
-                    <motion.div key="buy" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-[#0f0d20] border border-white/10 rounded-xl p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl">{myTile.flag || "🏙️"}</span>
-                        <div>
-                          <p className="text-white font-bold">{myTile.name}</p>
-                          <p className="text-slate-400 text-xs">{myTile.subname} • ${myTile.price}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => buyProperty()} disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
-                          className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold py-2 rounded-lg text-sm">
-                          Buy for ${myTile.price}
-                        </button>
-                        <button onClick={() => declinePurchase()}
-                          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm">
-                          Auction 🔨
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* AUCTION */}
+                      {/* AUCTION */
                   {gameState.phase === "auction" && gameState.currentAuction && (
                     <motion.div key="auction" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                       className="bg-amber-950/40 border border-amber-700/40 rounded-xl p-4">
