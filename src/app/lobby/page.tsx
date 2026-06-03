@@ -70,7 +70,7 @@ export default function LobbyPage() {
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 mb-4">
             <div className="text-center mb-6">
               <div className="text-5xl mb-3">🌍</div>
-              <h2 className="text-white font-black text-2xl">Waiting Room..</h2>
+              <h2 className="text-white font-black text-2xl">Waiting Room.</h2>
               <p className="text-slate-400 text-sm mt-1">Share the code with friends!</p>
             </div>
 
