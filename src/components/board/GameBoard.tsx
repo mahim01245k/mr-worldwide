@@ -9,7 +9,7 @@ import { PLAYER_COLOR_HEX } from "@/types/game";
 
 const BOARD_SIZE = 760;
 const CORNER_SIZE = 92;
-const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 9; // ~64px per non-corner tile
+const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 11;; // ~64px per non-corner tile
 const TILE_HEIGHT = CORNER_SIZE; // same height as corner
 
 interface TileProps {
@@ -216,42 +216,35 @@ function PlayerToken({ player, position, index, totalAtPosition }: {
 }
 
 function getTilePosition(tileId: number): [number, number, number, number, number] {
-  // Returns [x, y, width, height, rotation]
   const cs = CORNER_SIZE;
   const tw = TILE_WIDTH;
   const th = TILE_HEIGHT;
 
-  // Bottom row: 0 (corner) → 12 (corner)
-  if (tileId === 0) return [0, BOARD_SIZE - cs, cs, cs, 0]; // START (bottom-left)
+  // Top row: 0 (corner) → 12 (corner)
+  if (tileId === 0) return [0, 0, cs, cs, 0]; // START (top-left)
   if (tileId >= 1 && tileId <= 11) {
     const idx = tileId;
-    return [cs + (idx - 1) * tw, BOARD_SIZE - th, tw, th, 0];
+    return [cs + (idx - 1) * tw, 0, tw, th, 0];
   }
-  if (tileId === 12) return [BOARD_SIZE - cs, BOARD_SIZE - cs, cs, cs, 0]; // VACATION (bottom-right)
+  if (tileId === 12) return [BOARD_SIZE - cs, 0, cs, cs, 0]; // top-right
 
   // Right column: 13→22
   if (tileId >= 13 && tileId <= 22) {
     const idx = tileId - 13;
-    return [BOARD_SIZE - th, BOARD_SIZE - cs - th - idx * tw, th, tw, 90];
+    return [BOARD_SIZE - th, cs + idx * tw, th, tw, 90];
   }
-  if (tileId === 23) return [BOARD_SIZE - cs, 0, cs, cs, 0]; // PRISON (top-right)
+  if (tileId === 23) return [BOARD_SIZE - cs, BOARD_SIZE - cs, cs, cs, 0]; // bottom-right
 
-  // Top row: 24→34 (right to left)
+  // Bottom row: 24→34
   if (tileId >= 24 && tileId <= 34) {
     const idx = tileId - 24;
-    return [BOARD_SIZE - cs - th - idx * tw, 0, tw, th, 180];
+    return [BOARD_SIZE - cs - th - idx * tw, BOARD_SIZE - th, tw, th, 180];
   }
 
-  // Start is top-left corner (id: 0 but used as reference)
-  // Left column: 35→48 (top to bottom)
-  if (tileId >= 35 && tileId <= 45) {
+  // Left column: 35→48
+  if (tileId >= 35 && tileId <= 48) {
     const idx = tileId - 35;
-    return [0, cs + idx * tw, th, tw, 270];
-  }
-  if (tileId === 46) return [0, BOARD_SIZE - cs, cs, cs, 0]; // GO TO PRISON (bottom-left same as start? overlap)
-  if (tileId >= 47 && tileId <= 48) {
-    const idx = tileId - 45; // 47→2, 48→3
-    return [0, cs + (10 + idx) * tw, th, tw, 270];
+    return [0, BOARD_SIZE - cs - th - idx * tw, th, tw, 270];
   }
 
   return [0, 0, tw, th, 0];
