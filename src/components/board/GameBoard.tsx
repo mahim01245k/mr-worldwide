@@ -182,6 +182,31 @@ function TileCard({
   );
 }
 
+// Dice renderer with dots
+function DiceRenderer({ value, rolling }: { value: number; rolling: boolean }) {
+  const dots: Record<number, [number, number][]> = {
+    1: [[50, 50]],
+    2: [[20, 20], [80, 80]],
+    3: [[20, 20], [50, 50], [80, 80]],
+    4: [[20, 20], [80, 20], [20, 80], [80, 80]],
+    5: [[20, 20], [80, 20], [50, 50], [20, 80], [80, 80]],
+    6: [[15, 15], [85, 15], [15, 50], [85, 50], [15, 85], [85, 85]],
+  };
+  return (
+    <motion.div
+      className="w-12 h-12 rounded-lg bg-white shadow-lg flex items-center justify-center"
+      animate={rolling ? { rotate: [-15, 15, -10, 10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}}
+      transition={{ duration: 0.5 }}
+    >
+      <svg viewBox="0 0 100 100" className="w-full h-full">
+        {(dots[value] || dots[1]).map(([cx, cy], i) => (
+          <circle key={i} cx={cx} cy={cy} r={6} fill="#1e293b" />
+        ))}
+      </svg>
+    </motion.div>
+  );
+}
+
 // Player token component
 function PlayerToken({ player, position, index, totalAtPosition }: {
   player: Player;
@@ -231,20 +256,20 @@ function getTilePosition(tileId: number): [number, number, number, number, numbe
   // Right column: 13→22
   if (tileId >= 13 && tileId <= 22) {
     const idx = tileId - 13;
-    return [BOARD_SIZE - th, cs + idx * tw, th, tw, 90];
+    return [BOARD_SIZE - tw, cs + idx * th, tw, th, 0];
   }
   if (tileId === 23) return [BOARD_SIZE - cs, BOARD_SIZE - cs, cs, cs, 0]; // bottom-right
 
   // Bottom row: 24→34
   if (tileId >= 24 && tileId <= 34) {
     const idx = tileId - 24;
-    return [BOARD_SIZE - cs - th - idx * tw, BOARD_SIZE - th, tw, th, 180];
+    return [BOARD_SIZE - cs - tw - idx * th, BOARD_SIZE - th, th, tw, 0];
   }
 
   // Left column: 35→48
   if (tileId >= 35 && tileId <= 48) {
     const idx = tileId - 35;
-    return [0, BOARD_SIZE - cs - th - idx * tw, th, tw, 270];
+    return [0, BOARD_SIZE - cs - tw - idx * th, th, tw, 0];
   }
 
   return [0, 0, tw, th, 0];
@@ -403,7 +428,7 @@ export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn =
         })()}
       </svg>
 
-      {/* Dice overlay in center */}
+      {/* Dice overlay in center - compact */}
       {gameState && canRoll && phase === "rolling" && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -411,39 +436,22 @@ export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn =
           exit={{ opacity: 0, scale: 0.9 }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
         >
-          <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-8 border border-violet-500/30 flex flex-col items-center gap-4 pointer-events-auto">
-            <div className="flex gap-4">
-              <motion.div
-                className="w-16 h-16 rounded-lg bg-white shadow-xl flex items-center justify-center text-2xl font-bold text-slate-800"
-                animate={rolling ? { rotate: [-15, 15, -10, 10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}}
-                transition={{ duration: 0.5 }}
-              >
-                {gameState.diceValues[0]}
-              </motion.div>
-              <motion.div
-                className="w-16 h-16 rounded-lg bg-white shadow-xl flex items-center justify-center text-2xl font-bold text-slate-800"
-                animate={rolling ? { rotate: [15, -15, 10, -10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}}
-                transition={{ duration: 0.5 }}
-              >
-                {gameState.diceValues[1]}
-              </motion.div>
+          <div className="bg-black/50 backdrop-blur-sm rounded-xl p-4 border border-violet-500/40 flex flex-col items-center gap-3 pointer-events-auto">
+            <div className="flex gap-3">
+              <DiceRenderer value={gameState.diceValues[0]} rolling={rolling} />
+              <DiceRenderer value={gameState.diceValues[1]} rolling={rolling} />
             </div>
-            <div className="text-center">
-              <p className="text-violet-300 font-semibold">
-                Total: <span className="text-xl text-white">{gameState.diceValues[0] + gameState.diceValues[1]}</span>
-              </p>
-              {gameState.diceValues[0] === gameState.diceValues[1] && (
-                <p className="text-yellow-400 font-bold text-sm mt-1">Double! 🎲</p>
-              )}
-            </div>
+            {gameState.diceValues[0] === gameState.diceValues[1] && (
+              <p className="text-yellow-400 font-bold text-xs">Double!</p>
+            )}
             {onRoll && (
               <motion.button
                 onClick={onRoll}
                 disabled={rolling}
-                className="mt-2 px-8 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold rounded-lg transition-all"
+                className="px-6 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-all"
                 whileTap={{ scale: 0.95 }}
               >
-                {rolling ? "🎲 Rolling..." : "Roll Dice"}
+                {rolling ? "Rolling..." : "Roll"}
               </motion.button>
             )}
           </div>

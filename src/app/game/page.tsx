@@ -311,19 +311,7 @@ export default function GamePage() {
                     </motion.div>
                   )}
 
-                  {/* Selected tile info */}
-                  {selectedTile && !["buying","auction","card","trading"].includes(gameState.phase) && (
-                    <motion.div key="tileinfo" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-[#0f0d20] border border-white/10 rounded-xl p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{selectedTile.flag || "🏙️"}</span>
-                        <div>
-                          <p className="text-white font-bold text-sm">{selectedTile.name}</p>
-                          <p className="text-slate-400 text-xs">{selectedTile.subname} {selectedTile.price ? `• $${selectedTile.price}` : ""}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
+                  {/* Selected tile info - hidden */}
                 </AnimatePresence>
               </div>
             </div>
