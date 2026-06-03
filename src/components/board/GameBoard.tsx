@@ -253,23 +253,23 @@ function getTilePosition(tileId: number): [number, number, number, number, numbe
   }
   if (tileId === 12) return [BOARD_SIZE - cs, 0, cs, cs, 0]; // top-right
 
-  // Right column: 13→22
+  // Right column: 13→22 (tiles are th wide, tw tall)
   if (tileId >= 13 && tileId <= 22) {
     const idx = tileId - 13;
-    return [BOARD_SIZE - tw, cs + idx * th, tw, th, 0];
+    return [BOARD_SIZE - th, cs + idx * tw, th, tw, 0];
   }
   if (tileId === 23) return [BOARD_SIZE - cs, BOARD_SIZE - cs, cs, cs, 0]; // bottom-right
 
-  // Bottom row: 24→34
+  // Bottom row: 24→34 (right to left)
   if (tileId >= 24 && tileId <= 34) {
     const idx = tileId - 24;
-    return [BOARD_SIZE - cs - tw - idx * th, BOARD_SIZE - th, th, tw, 0];
+    return [BOARD_SIZE - cs - th - idx * tw, BOARD_SIZE - th, tw, th, 0];
   }
 
-  // Left column: 35→48
+  // Left column: 35→48 (bottom to top, tiles are th wide, tw tall)
   if (tileId >= 35 && tileId <= 48) {
     const idx = tileId - 35;
-    return [0, BOARD_SIZE - cs - tw - idx * th, th, tw, 0];
+    return [0, BOARD_SIZE - cs - th - idx * tw, th, tw, 0];
   }
 
   return [0, 0, tw, th, 0];
