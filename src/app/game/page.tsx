@@ -13,32 +13,6 @@ import { BOARD_TILES } from "@/lib/game/boardData";
 import { Copy, Settings, Trophy, RotateCcw, Send, Home, Hotel, DollarSign } from "lucide-react";
 import { useState, useRef } from "react";
 
-// ── Dice component ──────────────────────────────────────────────────────────
-function Die({ value, rolling }: { value: number; rolling: boolean }) {
-  const dots: Record<number, [number, number][]> = {
-    1: [[50, 50]],
-    2: [[25, 25], [75, 75]],
-    3: [[25, 25], [50, 50], [75, 75]],
-    4: [[25, 25], [75, 25], [25, 75], [75, 75]],
-    5: [[25, 25], [75, 25], [50, 50], [25, 75], [75, 75]],
-    6: [[20, 20], [80, 20], [20, 50], [80, 50], [20, 80], [80, 80]],
-  };
-  return (
-    <motion.div
-      className="w-16 h-16 rounded-xl bg-white shadow-2xl relative select-none"
-      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.6)" }}
-      animate={rolling ? { rotate: [-15, 15, -10, 10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}}
-      transition={{ duration: 0.5 }}
-    >
-      <svg viewBox="0 0 100 100" className="w-full h-full">
-        {(dots[value] || dots[1]).map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r={8} fill="#1e293b" />
-        ))}
-      </svg>
-    </motion.div>
-  );
-}
-
 // ── Game Over Modal ─────────────────────────────────────────────────────────
 function GameOverModal() {
   const { gameState, myPlayerId } = useGameStore();
@@ -231,33 +205,13 @@ export default function GamePage() {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
           {/* Board area */}
           <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
-            <GameBoard />
+            <GameBoard onRoll={handleRoll} canRoll={canRoll} rolling={rolling} isMyTurn={isMyTurn} phase={gameState.phase} />
             <TileDetail />
           </div>
 
-          {/* Bottom controls */}
+          {/* Bottom controls - simplified */}
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
             <div className="flex items-start gap-6 max-w-3xl mx-auto">
-              {/* Dice */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex gap-3">
-                  <Die value={gameState.diceValues[0]} rolling={rolling} />
-                  <Die value={gameState.diceValues[1]} rolling={rolling} />
-                </div>
-                {gameState.phase !== "waiting" && (
-                  <p className="text-slate-400 text-xs text-center">
-                    Total: <span className="text-white font-bold">{gameState.diceValues[0] + gameState.diceValues[1]}</span>
-                    {gameState.diceValues[0] === gameState.diceValues[1] && <span className="text-yellow-400 ml-1">Double!</span>}
-                  </p>
-                )}
-                <motion.button onClick={handleRoll} disabled={!canRoll || rolling}
-                  className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${canRoll && !rolling ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-slate-800 text-slate-500 cursor-not-allowed"}`}
-                  whileTap={canRoll ? { scale: 0.95 } : {}}>
-                  {rolling ? "Rolling..." : isMyTurn && gameState.phase === "rolling" ? "Roll Dice 🎲" : "Waiting..."}
-                </motion.button>
-              </div>
-
-              {/* Action area */}
               <div className="flex-1">
                 <AnimatePresence mode="wait">
                   {/* BUYING */}

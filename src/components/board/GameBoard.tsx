@@ -9,7 +9,7 @@ import { PLAYER_COLOR_HEX } from "@/types/game";
 
 const BOARD_SIZE = 760;
 const CORNER_SIZE = 92;
-const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 11;; // ~64px per non-corner tile
+const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 11; // ~60px per non-corner tile
 const TILE_HEIGHT = CORNER_SIZE; // same height as corner
 
 interface TileProps {
@@ -255,7 +255,15 @@ function getTokenCenter(tileId: number): [number, number] {
   return [x + w / 2, y + h / 2];
 }
 
-export function GameBoard() {
+interface GameBoardProps {
+  onRoll?: () => void;
+  canRoll?: boolean;
+  rolling?: boolean;
+  isMyTurn?: boolean;
+  phase?: string;
+}
+
+export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn = false, phase }: GameBoardProps = {}) {
   const { gameState, selectedTileId, selectTile } = useGameStore();
 
   const tiles = useMemo(() => BOARD_TILES, []);
@@ -276,7 +284,7 @@ export function GameBoard() {
   }, {} as Record<number, Player[]>);
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-full flex items-center justify-center relative">
       <svg
         viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`}
         className="w-full h-full max-w-[760px] max-h-[760px]"
@@ -295,43 +303,47 @@ export function GameBoard() {
           rx={4}
         />
 
-        {/* Center logo */}
-        <text
-          x={BOARD_SIZE / 2}
-          y={BOARD_SIZE / 2 - 30}
-          textAnchor="middle"
-          fontSize={28}
-          fontWeight="900"
-          fontFamily="system-ui"
-          fill="#7c3aed"
-          opacity={0.6}
-        >
-          🌍
-        </text>
-        <text
-          x={BOARD_SIZE / 2}
-          y={BOARD_SIZE / 2 + 10}
-          textAnchor="middle"
-          fontSize={22}
-          fontWeight="900"
-          fontFamily="system-ui"
-          fill="#a78bfa"
-          opacity={0.5}
-          letterSpacing={2}
-        >
-          MR. WORLDWIDE
-        </text>
-        <text
-          x={BOARD_SIZE / 2}
-          y={BOARD_SIZE / 2 + 35}
-          textAnchor="middle"
-          fontSize={10}
-          fill="#475569"
-          fontFamily="system-ui"
-          letterSpacing={4}
-        >
-          GLOBAL MONOPOLY
-        </text>
+        {/* Center logo - moved back when no dice */}
+        {!(canRoll && gameState?.phase === "rolling") && (
+          <>
+            <text
+              x={BOARD_SIZE / 2}
+              y={BOARD_SIZE / 2 - 30}
+              textAnchor="middle"
+              fontSize={28}
+              fontWeight="900"
+              fontFamily="system-ui"
+              fill="#7c3aed"
+              opacity={0.6}
+            >
+              🌍
+            </text>
+            <text
+              x={BOARD_SIZE / 2}
+              y={BOARD_SIZE / 2 + 10}
+              textAnchor="middle"
+              fontSize={22}
+              fontWeight="900"
+              fontFamily="system-ui"
+              fill="#a78bfa"
+              opacity={0.5}
+              letterSpacing={2}
+            >
+              MR. WORLDWIDE
+            </text>
+            <text
+              x={BOARD_SIZE / 2}
+              y={BOARD_SIZE / 2 + 35}
+              textAnchor="middle"
+              fontSize={10}
+              fill="#475569"
+              fontFamily="system-ui"
+              letterSpacing={4}
+            >
+              GLOBAL MONOPOLY
+            </text>
+          </>
+        )}
 
         {/* Render all tiles */}
         {tiles.map((tile) => {
@@ -390,6 +402,53 @@ export function GameBoard() {
           );
         })()}
       </svg>
+
+      {/* Dice overlay in center */}
+      {gameState && canRoll && phase === "rolling" && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        >
+          <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-8 border border-violet-500/30 flex flex-col items-center gap-4 pointer-events-auto">
+            <div className="flex gap-4">
+              <motion.div
+                className="w-16 h-16 rounded-lg bg-white shadow-xl flex items-center justify-center text-2xl font-bold text-slate-800"
+                animate={rolling ? { rotate: [-15, 15, -10, 10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                {gameState.diceValues[0]}
+              </motion.div>
+              <motion.div
+                className="w-16 h-16 rounded-lg bg-white shadow-xl flex items-center justify-center text-2xl font-bold text-slate-800"
+                animate={rolling ? { rotate: [15, -15, 10, -10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                {gameState.diceValues[1]}
+              </motion.div>
+            </div>
+            <div className="text-center">
+              <p className="text-violet-300 font-semibold">
+                Total: <span className="text-xl text-white">{gameState.diceValues[0] + gameState.diceValues[1]}</span>
+              </p>
+              {gameState.diceValues[0] === gameState.diceValues[1] && (
+                <p className="text-yellow-400 font-bold text-sm mt-1">Double! 🎲</p>
+              )}
+            </div>
+            {onRoll && (
+              <motion.button
+                onClick={onRoll}
+                disabled={rolling}
+                className="mt-2 px-8 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold rounded-lg transition-all"
+                whileTap={{ scale: 0.95 }}
+              >
+                {rolling ? "🎲 Rolling..." : "Roll Dice"}
+              </motion.button>
+            )}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
