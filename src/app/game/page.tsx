@@ -277,23 +277,7 @@ export default function GamePage() {
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
             <div className="flex items-start gap-6 max-w-3xl mx-auto">
               {/* Dice */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex gap-3">
-                  <Die value={gameState.diceValues[0]} rolling={rolling} />
-                  <Die value={gameState.diceValues[1]} rolling={rolling} />
-                </div>
-                {gameState.phase !== "waiting" && (
-                  <p className="text-slate-400 text-xs text-center">
-                    Total: <span className="text-white font-bold">{gameState.diceValues[0] + gameState.diceValues[1]}</span>
-                    {gameState.diceValues[0] === gameState.diceValues[1] && <span className="text-yellow-400 ml-1">Double!</span>}
-                  </p>
-                )}
-                <motion.button onClick={handleRoll} disabled={!canRoll || rolling}
-                  className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${canRoll && !rolling ? "bg-violet-600 hover:bg-violet-500 text-white" : "bg-slate-800 text-slate-500 cursor-not-allowed"}`}
-                  whileTap={canRoll ? { scale: 0.95 } : {}}>
-                  {rolling ? "Rolling..." : isMyTurn && gameState.phase === "rolling" ? "Roll Dice 🎲" : "Waiting..."}
-                </motion.button>
-              </div>
+              
 
               {/* Action area */}
               <div className="flex-1">
