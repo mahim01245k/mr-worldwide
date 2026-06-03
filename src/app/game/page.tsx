@@ -237,7 +237,7 @@ export default function GamePage() {
             <div className="flex items-start gap-6 max-w-3xl mx-auto">
               <div className="flex-1">
                 <AnimatePresence mode="wait">
-                      {/* AUCTION */
+                      {/* AUCTION */}
                   {gameState.phase === "auction" && gameState.currentAuction && (
                     <motion.div key="auction" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                       className="bg-amber-950/40 border border-amber-700/40 rounded-xl p-4">
