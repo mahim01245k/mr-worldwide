@@ -77,7 +77,7 @@ function PlayerCard({ player, isCurrentTurn, isMe, rank }: {
             const tile = BOARD_TILES.find((t) => t.id === propId);
             if (!tile) return null;
             return (
-              <span key={propId} title={tile.name} className="text-sm">{tile.flag || "🏙️"}</span>
+              <span key={propId} title={tile.name} className="text-sm">{tile.flagCode || "🏙️"}</span>
             );
           })}
           {player.properties.length > 6 && (

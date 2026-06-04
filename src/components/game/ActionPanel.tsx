@@ -35,7 +35,7 @@ export function ActionPanel() {
           style={{ background: `${tileColor}15`, borderColor: `${tileColor}40` }}
         >
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-3xl">{tile.flag || "🏙️"}</span>
+            <span className="text-3xl">{tile.flagCode || "🏙️"}</span>
             <div>
               <h3 className="text-white font-bold text-lg">{tile.name}</h3>
               <p className="text-slate-400 text-sm">{tile.subname}</p>
@@ -260,7 +260,7 @@ export function ActionPanel() {
               <p className="text-green-400">${pendingTrade.fromCash}</p>
               {pendingTrade.fromProperties.map((id) => {
                 const t = BOARD_TILES.find((tile) => tile.id === id);
-                return <p key={id} className="text-white text-xs">{t?.flag} {t?.name}</p>;
+                return <p key={id} className="text-white text-xs">{t?.flagCode} {t?.name}</p>;
               })}
             </div>
             <div className="bg-black/20 rounded-lg p-2">
@@ -268,7 +268,7 @@ export function ActionPanel() {
               <p className="text-red-400">${pendingTrade.toCash}</p>
               {pendingTrade.toProperties.map((id) => {
                 const t = BOARD_TILES.find((tile) => tile.id === id);
-                return <p key={id} className="text-white text-xs">{t?.flag} {t?.name}</p>;
+                return <p key={id} className="text-white text-xs">{t?.flagCode} {t?.name}</p>;
               })}
             </div>
           </div>

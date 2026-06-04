@@ -78,7 +78,7 @@ function TradePanel({ onClose }: TradePanelProps) {
                       }
                       className="rounded"
                     />
-                    <span className="text-xs text-slate-300">{tile?.flag} {tile?.name}</span>
+                    <span className="text-xs text-slate-300">{tile?.flagCode} {tile?.name}</span>
                   </label>
                 );
               })}
@@ -112,7 +112,7 @@ function TradePanel({ onClose }: TradePanelProps) {
                       }
                       className="rounded"
                     />
-                    <span className="text-xs text-slate-300">{tile?.flag} {tile?.name}</span>
+                    <span className="text-xs text-slate-300">{tile?.flagCode} {tile?.name}</span>
                   </label>
                 );
               })}
@@ -200,7 +200,7 @@ export function PropertyManager() {
               <div className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{tile.flag || "🏙️"}</span>
+                    <span className="text-lg">{tile.flagCode || "🏙️"}</span>
                     <div>
                       <p className="text-white font-bold text-xs">{tile.name}</p>
                       <p className="text-slate-500 text-xs">{tile.subname}</p>
