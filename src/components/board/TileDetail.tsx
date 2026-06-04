@@ -43,7 +43,7 @@ export function TileDetail() {
           <div className="p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{tile.flag || "🏙️"}</span>
+                <span className="text-4xl">{tile.flagCode || "🏙️"}</span>
                 <div>
                   <h3 className="text-white font-black text-lg">{tile.name}</h3>
                   <p className="text-slate-400 text-sm">{tile.subname || tile.type.toUpperCase()}</p>
