@@ -114,7 +114,7 @@ export default function GamePage() {
     <motion.div key="buy-overlay" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
       className="bg-[#0f0d20] border border-white/10 rounded-xl p-4 w-full">
       <div className="flex items-center gap-3 mb-3">
-        <span className="text-3xl">{myTile.flag || "🏙️"}</span>
+        <span className="text-3xl">{myTile.flagCode || "🏙️"}</span>
         <div>
           <p className="text-white font-bold">{myTile.name}</p>
           <p className="text-slate-400 text-xs">{myTile.subname} • ${myTile.price}</p>
@@ -406,7 +406,7 @@ export default function GamePage() {
                 return (
                   <div key={tile.id} className="bg-[#0f0d20] border border-white/10 rounded-xl p-2">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-base">{tile.flag || "🏙️"}</span>
+                      <span className="text-base">{tile.flagCode || "🏙️"}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-xs font-bold truncate">{tile.name}</p>
                         <p className="text-slate-500 text-xs">{ownership.hasHotel ? "🏨 Hotel" : ownership.houses > 0 ? `${"🏠".repeat(ownership.houses)}` : "No buildings"}</p>
