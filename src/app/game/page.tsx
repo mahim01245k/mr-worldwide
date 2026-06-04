@@ -20,7 +20,7 @@ function GameOverModal() {
   const winner = gameState.players.find(p => p.id === gameState.winner);
   const isWinner = winner?.id === myPlayerId;
   const ranked = [...gameState.players].sort((a, b) => b.netWorth - a.netWorth);
-  
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -32,7 +32,7 @@ function GameOverModal() {
         <div className="space-y-2 mb-6">
           {ranked.map((player, i) => (
             <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl ${i === 0 ? "bg-yellow-900/30 border border-yellow-700/40" : "bg-slate-800/60"}`}>
-              <span className="text-xl">{["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"][i]}</span>
+              <span className="text-xl">{["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣"][i]}</span>
               <span className="text-lg">{player.avatar}</span>
               <span className="text-white font-bold flex-1 text-left">{player.name}</span>
               <span className="text-yellow-400 font-bold">${player.netWorth.toLocaleString()}</span>
@@ -52,8 +52,8 @@ function GameOverModal() {
 export default function GamePage() {
   const { gameState, myPlayerId, roomCode, isConnected, selectedTileId } = useGameStore();
   const { rollDice, buyProperty, declinePurchase, auctionBid, processCard,
-          useJailCard, payJailFine, respondTrade, sendChat, buildHouse, buildHotel,
-          mortgageProperty, proposeTrade } = useSocket();
+    useJailCard, payJailFine, respondTrade, sendChat, buildHouse, buildHotel,
+    mortgageProperty, proposeTrade } = useSocket();
   const router = useRouter();
   const [chatInput, setChatInput] = useState("");
   const [bidAmount, setBidAmount] = useState(10);
@@ -143,7 +143,7 @@ export default function GamePage() {
 
         {/* ── LEFT SIDEBAR (Brand, Link, Chat, Activity) ── */}
         <div className="w-72 flex flex-col border-r border-white/10 min-h-0" style={{ background: "#15132a" }}>
-          
+
           {/* Brand & Share Link */}
           <div className="p-4 border-b border-white/10" style={{ background: "#1a1730" }}>
             <div className="flex items-center gap-3 mb-3">
@@ -208,7 +208,7 @@ export default function GamePage() {
 
         {/* ── CENTER: BOARD ── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
-          
+
           {/* Turn Indicator (Floating Center) */}
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-[#1a1730]/90 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-full shadow-xl">
             {currentPlayer && (
@@ -222,16 +222,17 @@ export default function GamePage() {
           </div>
 
           {/* Board area */}
-          <div className="flex-1 flex items-center justify-center p-4">
-        <GameBoard 
-          onRoll={handleRoll} 
-          canRoll={canRoll} 
-          rolling={rolling} 
-          isMyTurn={isMyTurn} 
-          phase={gameState.phase} 
-          buyPanel={buyPanel} 
-        />
-      </div>
+            <div className="flex-1 w-full flex items-center justify-center p-2 min-h-0">
+              <GameBoard
+                onRoll={handleRoll}
+                canRoll={canRoll}
+                rolling={rolling}
+                isMyTurn={isMyTurn}
+                phase={gameState.phase}
+                buyPanel={buyPanel}
+              />
+            </div>
+        
 
           {/* Bottom controls */}
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
@@ -318,7 +319,7 @@ export default function GamePage() {
 
         {/* ── RIGHT SIDEBAR (Players, Trades, Properties) ── */}
         <div className="w-72 flex flex-col border-l border-white/10 min-h-0" style={{ background: "#15132a" }}>
-          
+
           {/* Players list */}
           <div className="p-3 border-b border-white/10">
             <div className="space-y-1.5">

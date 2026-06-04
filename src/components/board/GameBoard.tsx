@@ -6,11 +6,11 @@ import { useGameStore } from "@/lib/store/gameStore";
 import { Player, PropertyOwnership, PLAYER_COLOR_HEX } from "@/types/game";
 
 // ── Board constants ──────────────────────────────────────────────────────────
-const BS  = 900;   // board size
-const CS  = 104;   // corner tile size
+const BS = 900;   // board size
+const CS = 104;   // corner tile size
 // 11 tiles per non-corner side (from the image: bottom has 11 non-corner tiles)
-const TW  = (BS - CS * 2) / 11;  // ~62.9px non-corner tile width
-const TH  = CS;                   // tile height = corner size
+const TW = (BS - CS * 2) / 11;  // ~62.9px non-corner tile width
+const TH = CS;                   // tile height = corner size
 
 // ── Tile layout: returns [x, y, w, h, rotation] ─────────────────────────────
 // Rotation is applied around tile center for text/content orientation ONLY.
@@ -99,16 +99,16 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   const bandColor = (() => {
     if (tile.color && tile.color !== "none") return COLOR_HEX[tile.color];
     switch (tile.type) {
-      case "start":        return "#16a34a";
-      case "vacation":     return "#0891b2";
+      case "start": return "#16a34a";
+      case "vacation": return "#0891b2";
       case "go-to-prison": return "#dc2626";
-      case "prison":       return "#7c3aed";
-      case "treasure":     return "#d97706";
-      case "surprise":     return "#7c3aed";
-      case "airport":      return "#0369a1";
-      case "tax":          return "#b91c1c";
-      case "utility":      return "#0891b2";
-      default:             return "#1e1b4b";
+      case "prison": return "#7c3aed";
+      case "treasure": return "#d97706";
+      case "surprise": return "#7c3aed";
+      case "airport": return "#0369a1";
+      case "tax": return "#b91c1c";
+      case "utility": return "#0891b2";
+      default: return "#1e1b4b";
     }
   })();
 
@@ -117,10 +117,10 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   // Band rect based on which edge
   const bandRect = (() => {
     switch (bandEdge) {
-      case "top":    return { bx: 0,      by: 0,      bw: w, bh: BAND };
-      case "bottom": return { bx: 0,      by: h-BAND, bw: w, bh: BAND };
-      case "left":   return { bx: 0,      by: 0,      bw: BAND, bh: h };
-      case "right":  return { bx: w-BAND, by: 0,      bw: BAND, bh: h };
+      case "top": return { bx: 0, by: 0, bw: w, bh: BAND };
+      case "bottom": return { bx: 0, by: h - BAND, bw: w, bh: BAND };
+      case "left": return { bx: 0, by: 0, bw: BAND, bh: h };
+      case "right": return { bx: w - BAND, by: 0, bw: BAND, bh: h };
     }
   })();
 
@@ -139,16 +139,16 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   // Special icon for non-property non-corner tiles
   const specialEmoji = (() => {
     switch (tile.type) {
-      case "treasure":     return "💰";
-      case "surprise":     return "❓";
-      case "airport":      return "✈️";
-      case "utility":      return tile.name.includes("Water") ? "💧" : "⛽";
-      case "tax":          return "💸";
-      case "start":        return "▶▶";
-      case "vacation":     return "🏖️";
+      case "treasure": return "💰";
+      case "surprise": return "❓";
+      case "airport": return "✈️";
+      case "utility": return tile.name.includes("Water") ? "💧" : "⛽";
+      case "tax": return "💸";
+      case "start": return "▶▶";
+      case "vacation": return "🏖️";
       case "go-to-prison": return "☠️";
-      case "prison":       return "🔒";
-      default:             return null;
+      case "prison": return "🔒";
+      default: return null;
     }
   })();
 
@@ -296,8 +296,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
         ownership.hasHotel
           ? <rect x={4} y={h - 10} width={9} height={7} fill="#ef4444" rx={1} />
           : Array.from({ length: ownership.houses }).map((_, i) =>
-              <rect key={i} x={3 + i * 7} y={h - 9} width={5} height={6} fill="#22c55e" rx={1} />
-            )
+            <rect key={i} x={3 + i * 7} y={h - 9} width={5} height={6} fill="#22c55e" rx={1} />
+          )
       )}
 
       {/* Selected glow */}
@@ -348,7 +348,7 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
   const gap = 14;
   const d1x = mid - dS - gap / 2;
   const d2x = mid + gap / 2;
-  const dy  = mid - dS / 2 - 28;
+  const dy = mid - dS / 2 - 28;
   const isDouble = values[0] === values[1];
   const total = values[0] + values[1];
   const active = canRoll && isMyTurn && !rolling && phase === "rolling";
@@ -367,7 +367,7 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
         {(DOTS[values[0]] || DOTS[1]).map(([px, py], i) => (
           <circle key={i}
             cx={d1x + (px / 100) * dS}
-            cy={dy  + (py / 100) * dS}
+            cy={dy + (py / 100) * dS}
             r={6} fill="#1e1b4b" />
         ))}
       </motion.g>
@@ -384,7 +384,7 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
         {(DOTS[values[1]] || DOTS[1]).map(([px, py], i) => (
           <circle key={i}
             cx={d2x + (px / 100) * dS}
-            cy={dy  + (py / 100) * dS}
+            cy={dy + (py / 100) * dS}
             r={6} fill="#1e1b4b" />
         ))}
       </motion.g>
@@ -449,7 +449,16 @@ export function GameBoard({
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
         className="w-full h-full"
-        style={{ filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))" }}
+        preserveAspectRatio="xMidYMid meet"
+        style={{
+          width: "100%",
+          height: "100%",
+          maxHeight: "85vh", // Limits board to 85% of screen height to prevent overflow
+          maxWidth: "85vw",  // Limits board to 85% of screen width
+          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
+          display: "block",
+          margin: "0 auto"
+        }}
       >
         <defs>
           {/* Flag clip paths are defined inline per tile */}
@@ -459,20 +468,20 @@ export function GameBoard({
         <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
 
         {/* Inner center */}
-        <rect x={CS} y={CS} width={BS - CS*2} height={BS - CS*2} fill="#080616" rx={4} />
+        <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#080616" rx={4} />
 
         {/* Center label */}
-        <text x={BS/2} y={BS/2 - 85} textAnchor="middle" fontSize={12}
+        <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
           fill="#2d2a4a" letterSpacing={5} fontWeight="700"
           style={{ userSelect: "none" }}>
           BOARD PREVIEW
         </text>
-        <text x={BS/2} y={BS/2 - 60} textAnchor="middle" fontSize={26}
+        <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
           fill="#4c3a8a" fontWeight="900" letterSpacing={2}
           style={{ userSelect: "none" }}>
           Mr. Worldwide
         </text>
-        <text x={BS/2} y={BS/2 - 32} textAnchor="middle" fontSize={48}
+        <text x={BS / 2} y={BS / 2 - 32} textAnchor="middle" fontSize={48}
           style={{ userSelect: "none" }}>
           🌍
         </text>
@@ -525,7 +534,7 @@ export function GameBoard({
 
         {/* Buy panel overlay */}
         {buyPanel && (
-          <foreignObject x={CS + 20} y={BS/2 + 80} width={BS - CS*2 - 40} height={120}>
+          <foreignObject x={CS + 20} y={BS / 2 + 80} width={BS - CS * 2 - 40} height={120}>
             <div>{buyPanel}</div>
           </foreignObject>
         )}
