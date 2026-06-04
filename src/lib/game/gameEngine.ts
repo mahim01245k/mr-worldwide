@@ -164,8 +164,7 @@ export function rollDice(state: GameState, playerId: string): GameState {
   }
 
   const newPosition = (updatedPlayer.position + total) % TOTAL_TILES;
-  const passedStart = newPosition < updatedPlayer.position && !currentPlayer.inJail;
-
+ const passedStart = updatedPlayer.position < 34 && newPosition >= 34 && !currentPlayer.inJail;
   if (passedStart) {
     updatedPlayer = { ...updatedPlayer, cash: updatedPlayer.cash + 200 };
   }
@@ -615,7 +614,7 @@ export function processCard(state: GameState, playerId: string): GameState {
       updatedState = {
         ...updatedState,
         players: updatedState.players.map((p) =>
-          p.id === playerId ? { ...p, position: 0, cash: p.cash + 200 } : p
+          p.id === playerId ? { ...p, position: 34, cash: p.cash + 200 } : p
         ),
         log: [...updatedState.log, createLog("card", `${player.name} advances to START and collects $200!`, playerId, 200)],
       };
