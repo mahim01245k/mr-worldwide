@@ -176,16 +176,16 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       />
 
       {/* Color band */}
-      {!isCorner && bandRect && (
+      {/* {!isCorner && bandRect && (
         <rect x={bandRect.bx} y={bandRect.by} width={bandRect.bw} height={bandRect.bh}
           fill={bandColor} rx={1} />
-      )}
+      )} */}
 
       {/* Corner colored background tint */}
-      {isCorner && (
+      {/* {isCorner && (
         <rect x={0} y={0} width={w} height={h}
           fill={bandColor} fillOpacity={0.15} rx={2} />
-      )}
+      )} */}
 
       {/* Mortgage overlay */}
       {ownership?.isMortgaged && (
