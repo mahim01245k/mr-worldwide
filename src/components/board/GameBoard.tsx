@@ -1,393 +1,545 @@
 "use client";
-
-// src/components/board/GameBoard.tsx
-
 import { type ReactNode, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { BOARD_TILES, COLOR_HEX, BoardTile } from "@/lib/game/boardData";
 import { useGameStore } from "@/lib/store/gameStore";
-import { Player, PropertyOwnership } from "@/types/game";
-import { PLAYER_COLOR_HEX } from "@/types/game";
-import { FlagIcon } from "@/components/ui/FlagIcon";
+import { Player, PropertyOwnership, PLAYER_COLOR_HEX } from "@/types/game";
 
-const BOARD_SIZE = 900;
-const CORNER_SIZE = 104;
-const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 11;
-const TILE_HEIGHT = CORNER_SIZE;
+// ── Board constants ──────────────────────────────────────────────────────────
+const BS  = 900;   // board size
+const CS  = 104;   // corner tile size
+// 11 tiles per non-corner side (from the image: bottom has 11 non-corner tiles)
+const TW  = (BS - CS * 2) / 11;  // ~62.9px non-corner tile width
+const TH  = CS;                   // tile height = corner size
 
-interface TileProps {
+// ── Tile layout: returns [x, y, w, h, rotation] ─────────────────────────────
+// Rotation is applied around tile center for text/content orientation ONLY.
+// Rect positions are always in absolute board coordinates.
+//
+// Visual orientation from the image:
+//   bottom row  → text reads upward (rotated 180° from default SVG, so we rotate content 180°... 
+//                 actually bottom row reads normally: flag on top, name in middle, price at bottom)
+//   right col   → text reads from bottom-to-top (rotate content -90°)
+//   top row     → text reads downward/upside-down (rotate content 180°)  
+//   left col    → text reads from top-to-bottom (rotate content 90°)
+//
+// The color band is always on the OUTER edge of each tile.
+
+function getTileLayout(tile: BoardTile): {
+  x: number; y: number; w: number; h: number;
+  side: "bottom" | "right" | "top" | "left" | "corner";
+  textRot: number; // rotation for text content around tile center
+  bandEdge: "top" | "bottom" | "left" | "right"; // which edge gets the color band
+} {
+  const { position, index } = tile;
+  const isCorner = index === 0 || (position === "bottom" && index === 12);
+
+  if (position === "bottom") {
+    if (index === 0) {
+      // START corner - bottom left
+      return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
+    }
+    if (index === 12) {
+      // VACATION corner - bottom right
+      return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
+    }
+    // Regular bottom tiles — left to right, idx 1..11
+    const x = CS + (index - 1) * TW;
+    return { x, y: BS - TH, w: TW, h: TH, side: "bottom", textRot: 0, bandEdge: "top" };
+  }
+
+  if (position === "right") {
+    // Right column: bottom-to-top, idx 0 = bottom, goes upward
+    // In the image right column is read rotated — text reads bottom-to-top
+    const totalRight = BOARD_TILES.filter(t => t.position === "right").length;
+    const fromBottom = totalRight - 1 - index;
+    return {
+      x: BS - TH,
+      y: CS + fromBottom * TW,
+      w: TH, h: TW,
+      side: "right", textRot: -90, bandEdge: "left"
+    };
+  }
+
+  if (position === "top") {
+    // Top row: right-to-left, idx 0 = rightmost
+    // In the image top row text reads upside-down (rotated 180°)
+    const x = BS - CS - (index + 1) * TW;
+    return { x, y: 0, w: TW, h: TH, side: "top", textRot: 180, bandEdge: "bottom" };
+  }
+
+  if (position === "left") {
+    // Left column: top-to-bottom, idx 0 = top
+    // In the image left column text reads top-to-bottom (rotated 90°)
+    return {
+      x: 0, y: CS + index * TW,
+      w: TH, h: TW,
+      side: "left", textRot: 90, bandEdge: "right"
+    };
+  }
+
+  return { x: 0, y: 0, w: TW, h: TH, side: "bottom", textRot: 0, bandEdge: "top" };
+}
+
+function getTokenCenter(tileId: number): [number, number] {
+  const tile = BOARD_TILES.find(t => t.id === tileId);
+  if (!tile) return [BS / 2, BS / 2];
+  const { x, y, w, h } = getTileLayout(tile);
+  return [x + w / 2, y + h / 2];
+}
+
+// ── Tile renderer ────────────────────────────────────────────────────────────
+function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   tile: BoardTile;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
   ownership?: PropertyOwnership;
   players: Player[];
   isSelected: boolean;
   onSelect: (id: number) => void;
-  isCurrentPosition: boolean;
-}
+}) {
+  const layout = getTileLayout(tile);
+  const { x, y, w, h, side, textRot, bandEdge } = layout;
 
-function TileCard({
-  tile, x, y, width, height, rotation,
-  ownership, players, isSelected, onSelect, isCurrentPosition
-}: TileProps) {
-  const owner = ownership ? players.find((p) => p.id === ownership.ownerId) : null;
+  const owner = ownership ? players.find(p => p.id === ownership.ownerId) : null;
   const ownerColor = owner ? PLAYER_COLOR_HEX[owner.color] : null;
+  const isCorner = side === "corner";
+  const isProperty = ["property", "airport", "utility"].includes(tile.type);
 
-  const isProperty = tile.type === "property" || tile.type === "airport" || tile.type === "utility";
-  const isSpecial = ["start", "treasure", "surprise", "go-to-prison", "vacation", "prison", "tax"].includes(tile.type);
-  const tileColor = tile.color && tile.color !== "none" ? COLOR_HEX[tile.color] : null;
-  const hasBuildings = ownership && (ownership.houses > 0 || ownership.hasHotel);
+  // Color for the band
+  const bandColor = (() => {
+    if (tile.color && tile.color !== "none") return COLOR_HEX[tile.color];
+    switch (tile.type) {
+      case "start":        return "#16a34a";
+      case "vacation":     return "#0891b2";
+      case "go-to-prison": return "#dc2626";
+      case "prison":       return "#7c3aed";
+      case "treasure":     return "#d97706";
+      case "surprise":     return "#7c3aed";
+      case "airport":      return "#0369a1";
+      case "tax":          return "#b91c1c";
+      case "utility":      return "#0891b2";
+      default:             return "#1e1b4b";
+    }
+  })();
 
-  // Get the icon/text for special tiles
-  const getSpecialIcon = () => {
-    if (tile.type === "treasure") return "?";
-    if (tile.type === "surprise") return "?";
-    if (tile.type === "airport") return "✈";
-    if (tile.type === "utility") return "⚡";
-    if (tile.type === "tax" && tile.taxAmount && tile.taxAmount < 1) return "10%";
-    if (tile.type === "tax") return `$${tile.taxAmount}`;
-    return "?";
-  };
+  const BAND = 14; // band thickness in px
 
-  const isCorner = tile.type === "start" || tile.type === "vacation" || tile.type === "prison" || tile.type === "go-to-prison";
+  // Band rect based on which edge
+  const bandRect = (() => {
+    switch (bandEdge) {
+      case "top":    return { bx: 0,      by: 0,      bw: w, bh: BAND };
+      case "bottom": return { bx: 0,      by: h-BAND, bw: w, bh: BAND };
+      case "left":   return { bx: 0,      by: 0,      bw: BAND, bh: h };
+      case "right":  return { bx: w-BAND, by: 0,      bw: BAND, bh: h };
+    }
+  })();
+
+  // For rotated tiles, the "top" in the tile's local frame (after textRot) 
+  // is where the flag should go. We place content relative to tile center.
+  // The textRot rotates around the tile center.
+  const cx = w / 2;
+  const cy = h / 2;
+
+  // In the tile's local (pre-rotation) frame, figure out content dims
+  // For rotated tiles (left/right), the visual "height" is actually w, "width" is h
+  const isRotated = textRot === 90 || textRot === -90;
+  const vW = isRotated ? h : w;  // visual width after rotation
+  const vH = isRotated ? w : h;  // visual height after rotation
+
+  // Special icon for non-property non-corner tiles
+  const specialEmoji = (() => {
+    switch (tile.type) {
+      case "treasure":     return "💰";
+      case "surprise":     return "❓";
+      case "airport":      return "✈️";
+      case "utility":      return tile.name.includes("Water") ? "💧" : "⛽";
+      case "tax":          return "💸";
+      case "start":        return "▶▶";
+      case "vacation":     return "🏖️";
+      case "go-to-prison": return "☠️";
+      case "prison":       return "🔒";
+      default:             return null;
+    }
+  })();
 
   return (
     <g
-      transform={`translate(${x}, ${y}) rotate(${rotation}, ${width / 2}, ${height / 2})`}
+      transform={`translate(${x},${y})`}
       onClick={() => onSelect(tile.id)}
       style={{ cursor: "pointer" }}
     >
-      {/* Base tile */}
-      <rect
-        x={0} y={0}
-        width={width} height={height}
-        fill={isSelected ? "#334155" : "#0f172a"}
-        stroke={isSelected ? "#a78bfa" : ownerColor || "#1e3a5f"}
-        strokeWidth={isSelected ? 2.5 : 1}
-        rx={3}
+      {/* Base background */}
+      <rect x={0} y={0} width={w} height={h}
+        fill={isSelected ? "#1e1a3a" : "#13112a"}
+        stroke={isSelected ? "#a78bfa" : ownerColor ? ownerColor + "55" : "#1e1b4b"}
+        strokeWidth={isSelected ? 2 : 0.8}
+        rx={2}
       />
 
-      {/* Color gradient overlay (top fade for property tiles) */}
-      {isProperty && tileColor && (
-        <rect
-          x={0} y={0}
-          width={width} height={height * 0.55}
-          fill={`url(#grad-${tile.id})`}
-          rx={3}
-        />
+      {/* Color band */}
+      {!isCorner && bandRect && (
+        <rect x={bandRect.bx} y={bandRect.by} width={bandRect.bw} height={bandRect.bh}
+          fill={bandColor} rx={1} />
       )}
 
-      {/* Special tile tint */}
-      {isSpecial && !isProperty && !isCorner && tileColor && (
-        <rect
-          x={0} y={0}
-          width={width} height={height}
-          fill={tileColor}
-          fillOpacity={0.12}
-          rx={3}
-        />
+      {/* Corner colored background tint */}
+      {isCorner && (
+        <rect x={0} y={0} width={w} height={h}
+          fill={bandColor} fillOpacity={0.15} rx={2} />
       )}
 
       {/* Mortgage overlay */}
       {ownership?.isMortgaged && (
-        <rect x={0} y={0} width={width} height={height} fill="#000" fillOpacity={0.5} rx={3} />
+        <rect x={0} y={0} width={w} height={h} fill="#000" fillOpacity={0.5} rx={2} />
       )}
 
-      {/* Tile content */}
-      <g transform={`translate(${width / 2}, ${height / 2})`}>
-        {/* Circular Flag */}
-        {tile.flagCode && (
-          <foreignObject x={-14} y={-height / 2 + 14} width={28} height={28}>
-            <FlagIcon code={tile.flagCode} size={28} />
-          </foreignObject>
-        )}
+      {/* All content rotated around center */}
+      <g transform={`rotate(${textRot}, ${cx}, ${cy})`}>
 
-        {/* Special tile icon */}
-        {isSpecial && !tile.flagCode && (
-          <text
-            textAnchor="middle"
-            dominantBaseline="middle"
-            y={-height / 2 + 20}
-            fontSize={tile.type === "tax" ? 14 : 20}
-            fill={tileColor || "#a78bfa"}
-            fontWeight="700"
-            style={{ userSelect: "none" }}
-          >
-            {getSpecialIcon()}
-          </text>
-        )}
+        {isCorner ? (
+          // ── Corner tiles ──────────────────────────────────────────────────
+          <g>
+            <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
+              fontSize={26} style={{ userSelect: "none" }}>
+              {specialEmoji}
+            </text>
+            <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
+              fontSize={9} fill="#e2e8f0" fontWeight="700"
+              style={{ userSelect: "none" }}>
+              {tile.name.toUpperCase()}
+            </text>
+            {tile.type === "start" && (
+              <text x={cx} y={cy + 24} textAnchor="middle" dominantBaseline="middle"
+                fontSize={7} fill="#22c55e"
+                style={{ userSelect: "none" }}>
+                Collect $200
+              </text>
+            )}
+          </g>
+        ) : isProperty && tile.flagCode ? (
+          // ── Property tiles with flag ──────────────────────────────────────
+          // In local rotated frame: vH = visual height, vW = visual width
+          // Top area (after band): flag
+          // Middle: city name
+          // Bottom: price badge
+          <g>
+            {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
+                Instead use a clipped circle with image */}
+            <clipPath id={`flag-clip-${tile.id}`}>
+              <circle cx={cx} cy={cy - vH * 0.15} r={12} />
+            </clipPath>
+            <image
+              href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
+              x={cx - 12} y={cy - vH * 0.15 - 12}
+              width={24} height={24}
+              clipPath={`url(#flag-clip-${tile.id})`}
+              preserveAspectRatio="xMidYMid slice"
+            />
+            <circle cx={cx} cy={cy - vH * 0.15} r={12}
+              fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
 
-        {/* City / Tile Name */}
-        <text
-          textAnchor="middle"
-          dominantBaseline="middle"
-          y={tile.flagCode ? -6 : (isSpecial ? -4 : -height / 2 + 18)}
-          fontSize={isCorner ? 11 : 9}
-          fill="#fff"
-          fontWeight="700"
-          fontFamily="system-ui, sans-serif"
-          style={{ userSelect: "none", textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}
-        >
-          {tile.name.length > (isCorner ? 12 : 9) ? tile.name.substring(0, (isCorner ? 11 : 8)) + "…" : tile.name}
-        </text>
+            {/* City name */}
+            <text x={cx} y={cy + vH * 0.1} textAnchor="middle" dominantBaseline="middle"
+              fontSize={vW > 60 ? 8.5 : 7.5} fill="#e8e4ff" fontWeight="700"
+              style={{ userSelect: "none" }}>
+              {tile.name.length > 9 ? tile.name.slice(0, 8) + "…" : tile.name}
+            </text>
 
-        {/* Price */}
-        {tile.price && (
-          <rect
-            x={-18}
-            y={height / 2 - 20}
-            width={36}
-            height={14}
-            fill="rgba(0,0,0,0.4)"
-            rx={4}
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={0.5}
-          />
-        )}
-        {tile.price && (
-          <text
-            textAnchor="middle"
-            dominantBaseline="middle"
-            y={height / 2 - 13}
-            fontSize={9}
-            fill="#fff"
-            fontWeight="700"
-            fontFamily="system-ui, sans-serif"
-            style={{ userSelect: "none" }}
-          >
-            ${tile.price}
-          </text>
-        )}
-
-        {/* Tax subtitle */}
-        {tile.type === "tax" && tile.subname && (
-          <text
-            textAnchor="middle"
-            dominantBaseline="middle"
-            y={height / 2 - 13}
-            fontSize={6.5}
-            fill="#94a3b8"
-            fontWeight="600"
-            fontFamily="system-ui, sans-serif"
-            style={{ userSelect: "none" }}
-          >
-            {tile.subname}
-          </text>
+            {/* Price badge */}
+            {tile.price && (
+              <g>
+                <rect x={cx - 16} y={cy + vH * 0.28} width={32} height={13}
+                  fill="rgba(0,0,0,0.45)" rx={3}
+                  stroke="rgba(255,255,255,0.08)" strokeWidth={0.5} />
+                <text x={cx} y={cy + vH * 0.28 + 7} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={8} fill="#fff" fontWeight="700"
+                  style={{ userSelect: "none" }}>
+                  ${tile.price}
+                </text>
+              </g>
+            )}
+          </g>
+        ) : (
+          // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
+          <g>
+            {specialEmoji && (
+              <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
+                fontSize={tile.type === "tax" ? 14 : 18}
+                style={{ userSelect: "none" }}>
+                {specialEmoji}
+              </text>
+            )}
+            <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
+              fontSize={7.5} fill="#ddd8ff" fontWeight="700"
+              style={{ userSelect: "none" }}>
+              {tile.name.length > 9 ? tile.name.slice(0, 8) + "…" : tile.name}
+            </text>
+            {tile.type === "tax" && tile.taxAmount && (
+              <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
+                fontSize={7} fill="#fca5a5"
+                style={{ userSelect: "none" }}>
+                {tile.taxAmount < 1 ? `${tile.taxAmount * 100}%` : `$${tile.taxAmount}`}
+              </text>
+            )}
+            {tile.price && (
+              <g>
+                <rect x={cx - 16} y={cy + 22} width={32} height={13}
+                  fill="rgba(0,0,0,0.45)" rx={3} />
+                <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={8} fill="#fff" fontWeight="700"
+                  style={{ userSelect: "none" }}>
+                  ${tile.price}
+                </text>
+              </g>
+            )}
+          </g>
         )}
       </g>
 
-      {/* Owner dot */}
+      {/* Owner dot (always in tile corner, not rotated) */}
       {ownerColor && (
-        <circle cx={width - 8} cy={height - 8} r={5} fill={ownerColor} stroke="#fff" strokeWidth={1} />
+        <circle cx={w - 7} cy={7} r={5} fill={ownerColor} stroke="#fff" strokeWidth={1} />
       )}
 
       {/* Buildings */}
-      {hasBuildings && (
-        <g>
-          {ownership!.hasHotel ? (
-            <rect x={width - 16} y={16} width={10} height={7} fill="#ef4444" rx={1} />
-          ) : (
-            Array.from({ length: ownership!.houses }).map((_, i) => (
-              <rect key={i} x={2 + i * 7} y={16} width={5} height={5} fill="#22c55e" rx={1} />
-            ))
-          )}
-        </g>
+      {ownership && !ownership.isMortgaged && (
+        ownership.hasHotel
+          ? <rect x={4} y={h - 10} width={9} height={7} fill="#ef4444" rx={1} />
+          : Array.from({ length: ownership.houses }).map((_, i) =>
+              <rect key={i} x={3 + i * 7} y={h - 9} width={5} height={6} fill="#22c55e" rx={1} />
+            )
       )}
 
-      {/* Highlight for current position */}
-      {isCurrentPosition && (
-        <rect x={0} y={0} width={width} height={height} fill="none" stroke="#fbbf24" strokeWidth={2} rx={3} opacity={0.8} />
+      {/* Selected glow */}
+      {isSelected && (
+        <rect x={0} y={0} width={w} height={h} fill="none"
+          stroke="#a78bfa" strokeWidth={2} rx={2} strokeOpacity={0.85} />
       )}
     </g>
   );
 }
 
-// Dice renderer
-function DiceRenderer({ value, rolling }: { value: number; rolling: boolean }) {
-  const dots: Record<number, [number, number][]> = {
-    1: [[50, 50]],
-    2: [[20, 20], [80, 80]],
-    3: [[20, 20], [50, 50], [80, 80]],
-    4: [[20, 20], [80, 20], [20, 80], [80, 80]],
-    5: [[20, 20], [80, 20], [50, 50], [20, 80], [80, 80]],
-    6: [[15, 15], [85, 15], [15, 50], [85, 50], [15, 85], [85, 85]],
-  };
-  return (
-    <motion.div className="w-12 h-12 rounded-lg bg-white shadow-lg flex items-center justify-center" animate={rolling ? { rotate: [-15, 15, -10, 10, 0], scale: [1, 1.1, 0.95, 1.05, 1] } : {}} transition={{ duration: 0.5 }}>
-      <svg viewBox="0 0 100 100" className="w-full h-full">
-        {(dots[value] || dots[1]).map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r={6} fill="#1e293b" />
-        ))}
-      </svg>
-    </motion.div>
-  );
-}
-
-// Player token
-function PlayerToken({ player, position, index, totalAtPosition }: {
-  player: Player;
-  position: [number, number];
-  index: number;
-  totalAtPosition: number;
+// ── Player token ─────────────────────────────────────────────────────────────
+function PlayerToken({ player, cx, cy, ox }: {
+  player: Player; cx: number; cy: number; ox: number;
 }) {
-  const offset = totalAtPosition > 1 ? (index - (totalAtPosition - 1) / 2) * 12 : 0;
   return (
-    <motion.g animate={{ x: position[0] + offset, y: position[1] }} transition={{ type: "spring", stiffness: 200, damping: 20 }} initial={false}>
-      <circle r={10} fill={PLAYER_COLOR_HEX[player.color]} stroke="#fff" strokeWidth={2} />
-      <text textAnchor="middle" dominantBaseline="middle" fontSize={10} style={{ userSelect: "none" }}>{player.avatar}</text>
+    <motion.g
+      animate={{ x: cx + ox, y: cy }}
+      initial={false}
+      transition={{ type: "spring", stiffness: 180, damping: 20 }}
+    >
+      <circle r={11} fill={PLAYER_COLOR_HEX[player.color]} stroke="#fff" strokeWidth={2} />
+      <text textAnchor="middle" dominantBaseline="middle" fontSize={11}
+        style={{ userSelect: "none" }}>
+        {player.avatar}
+      </text>
     </motion.g>
   );
 }
 
-function getTilePosition(tile: BoardTile): [number, number, number, number, number] {
-  const cs = CORNER_SIZE;
-  const tw = TILE_WIDTH;
-  const th = TILE_HEIGHT;
-  const rightCount = BOARD_TILES.filter((t) => t.position === "right").length;
-  const leftCount = BOARD_TILES.filter((t) => t.position === "left").length;
+// ── Dice in center ────────────────────────────────────────────────────────────
+function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
+  values: [number, number]; rolling: boolean;
+  canRoll: boolean; isMyTurn: boolean; phase: string;
+  onRoll: () => void;
+}) {
+  const DOTS: Record<number, [number, number][]> = {
+    1: [[50, 50]],
+    2: [[25, 25], [75, 75]],
+    3: [[25, 25], [50, 50], [75, 75]],
+    4: [[25, 25], [75, 25], [25, 75], [75, 75]],
+    5: [[25, 25], [75, 25], [50, 50], [25, 75], [75, 75]],
+    6: [[22, 22], [78, 22], [22, 50], [78, 50], [22, 78], [78, 78]],
+  };
 
-  let x = 0, y = 0, w = tw, h = th, rot = 0;
+  const mid = BS / 2;
+  const dS = 68; // dice size
+  const gap = 14;
+  const d1x = mid - dS - gap / 2;
+  const d2x = mid + gap / 2;
+  const dy  = mid - dS / 2 - 28;
+  const isDouble = values[0] === values[1];
+  const total = values[0] + values[1];
+  const active = canRoll && isMyTurn && !rolling && phase === "rolling";
 
-  if (tile.position === "bottom") {
-    if (tile.index === 0) { x = 0; y = BOARD_SIZE - th; w = cs; h = th; }
-    else if (tile.index >= 1 && tile.index <= 11) { x = cs + (tile.index - 1) * tw; y = BOARD_SIZE - th; }
-    else if (tile.index === 12) { x = BOARD_SIZE - cs; y = BOARD_SIZE - th; w = cs; }
-  }
+  return (
+    <g>
+      {/* Dice 1 */}
+      <motion.g
+        animate={rolling ? { rotate: [-15, 15, -10, 10, 0] } : { rotate: 0 }}
+        style={{ transformOrigin: `${d1x + dS / 2}px ${dy + dS / 2}px` }}
+        transition={{ duration: 0.55 }}
+      >
+        <rect x={d1x} y={dy} width={dS} height={dS} rx={12}
+          fill="white"
+          style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }} />
+        {(DOTS[values[0]] || DOTS[1]).map(([px, py], i) => (
+          <circle key={i}
+            cx={d1x + (px / 100) * dS}
+            cy={dy  + (py / 100) * dS}
+            r={6} fill="#1e1b4b" />
+        ))}
+      </motion.g>
 
-  if (tile.position === "right") {
-    const step = (BOARD_SIZE - cs * 2) / rightCount;
-    const idx = rightCount - 1 - tile.index;
-    x = BOARD_SIZE - th; y = cs + idx * step; w = th; h = step; rot = 90;
-  }
+      {/* Dice 2 */}
+      <motion.g
+        animate={rolling ? { rotate: [15, -15, 10, -10, 0] } : { rotate: 0 }}
+        style={{ transformOrigin: `${d2x + dS / 2}px ${dy + dS / 2}px` }}
+        transition={{ duration: 0.55 }}
+      >
+        <rect x={d2x} y={dy} width={dS} height={dS} rx={12}
+          fill="white"
+          style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }} />
+        {(DOTS[values[1]] || DOTS[1]).map(([px, py], i) => (
+          <circle key={i}
+            cx={d2x + (px / 100) * dS}
+            cy={dy  + (py / 100) * dS}
+            r={6} fill="#1e1b4b" />
+        ))}
+      </motion.g>
 
-  if (tile.position === "top") {
-    const step = (BOARD_SIZE - cs * 2) / 11;
-    x = cs + (11 - tile.index) * step; y = 0; w = step; h = th; rot = 180;
-  }
+      {/* Labels */}
+      <text x={mid} y={dy + dS + 20} textAnchor="middle"
+        fontSize={12} fill={isDouble ? "#fbbf24" : "#8b7cf6"}
+        fontWeight="700" style={{ userSelect: "none" }}>
+        {phase === "waiting" ? "" : isDouble ? `Double! (${total})` : `Total: ${total}`}
+      </text>
 
-  if (tile.position === "left") {
-    const step = (BOARD_SIZE - cs * 2) / leftCount;
-    x = 0; y = cs + tile.index * step; w = th; h = step; rot = 270;
-  }
-
-  y = BOARD_SIZE - y - h;
-  if (tile.position === "bottom") rot = 180;
-  if (tile.position === "top") rot = 0;
-
-  return [x, y, w, h, rot];
+      {/* Roll button */}
+      <g
+        onClick={active ? onRoll : undefined}
+        style={{ cursor: active ? "pointer" : "not-allowed" }}
+      >
+        <rect x={mid - 72} y={mid + 20} width={144} height={40} rx={10}
+          fill={active ? "#7c3aed" : "#2a2550"}
+          style={{ transition: "fill 0.2s" }}
+        />
+        <text x={mid} y={mid + 45} textAnchor="middle"
+          fontSize={14} fill={active ? "#fff" : "#6b7280"}
+          fontWeight="800" style={{ userSelect: "none" }}>
+          {rolling ? "Rolling..." : isMyTurn && phase === "rolling" ? "🎲  Roll Dice" : "Waiting..."}
+        </text>
+      </g>
+    </g>
+  );
 }
 
-function getTokenCenter(tileId: number): [number, number] {
-  const tile = BOARD_TILES.find((t) => t.id === tileId);
-  if (!tile) return [0, 0];
-  const [x, y, w, h] = getTilePosition(tile);
-  return [x + w / 2, y + h / 2];
-}
-
-interface GameBoardProps {
+// ── Main GameBoard export ────────────────────────────────────────────────────
+export function GameBoard({
+  onRoll,
+  canRoll = false,
+  rolling = false,
+  isMyTurn = false,
+  phase = "waiting",
+  buyPanel,
+}: {
   onRoll?: () => void;
   canRoll?: boolean;
   rolling?: boolean;
   isMyTurn?: boolean;
   phase?: string;
   buyPanel?: ReactNode;
-}
-
-export function GameBoard({ onRoll, canRoll = false, rolling = false, isMyTurn = false, phase, buyPanel }: GameBoardProps = {}) {
+} = {}) {
   const { gameState, selectedTileId, selectTile } = useGameStore();
   const tiles = useMemo(() => BOARD_TILES, []);
 
   if (!gameState) return null;
 
-  const { players, properties, currentPlayerIndex } = gameState;
+  const { players, properties, currentPlayerIndex, diceValues } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
-  const playersByPosition = players.reduce((acc, player) => {
-    if (!player.isBankrupt) {
-      const pos = player.position;
-      acc[pos] = acc[pos] || [];
-      acc[pos].push(player);
-    }
+  const byPos = players.reduce<Record<number, Player[]>>((acc, p) => {
+    if (!p.isBankrupt) { acc[p.position] = [...(acc[p.position] || []), p]; }
     return acc;
-  }, {} as Record<number, Player[]>);
+  }, {});
 
   return (
-    <div className="w-full h-full flex items-center justify-center relative">
-      <svg viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`} className="w-full h-full max-w-[900px] max-h-[900px]" style={{ filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.8))" }}>
+    <div className="w-full h-full flex items-center justify-center">
+      <svg
+        viewBox={`0 0 ${BS} ${BS}`}
+        className="w-full h-full"
+        style={{ maxWidth: 900, maxHeight: 900,
+          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))" }}
+      >
         <defs>
-          {/* Gradients per color */}
-          {Object.entries(COLOR_HEX).filter(([key]) => key !== "none").map(([key, color]) => (
-            <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={color} stopOpacity="0" />
-            </linearGradient>
-          ))}
-          {/* Per-tile gradient overrides */}
-          {tiles.filter(t => t.color && t.color !== "none").map(tile => (
-            <linearGradient key={`tile-grad-${tile.id}`} id={`grad-${tile.id}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLOR_HEX[tile.color!]} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={COLOR_HEX[tile.color!]} stopOpacity="0" />
-            </linearGradient>
-          ))}
+          {/* Flag clip paths are defined inline per tile */}
         </defs>
 
-        <rect x={0} y={0} width={BOARD_SIZE} height={BOARD_SIZE} fill="#0a0f1e" rx={12} />
+        {/* Board background */}
+        <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
 
-        <rect x={CORNER_SIZE} y={CORNER_SIZE} width={BOARD_SIZE - CORNER_SIZE * 2} height={BOARD_SIZE - CORNER_SIZE * 2} fill="#070c19" rx={4} />
+        {/* Inner center */}
+        <rect x={CS} y={CS} width={BS - CS*2} height={BS - CS*2} fill="#080616" rx={4} />
 
-        {!(canRoll && gameState?.phase === "rolling") && (
-          <>
-            <text x={BOARD_SIZE / 2} y={BOARD_SIZE / 2 - 30} textAnchor="middle" fontSize={28} fontWeight="900" fontFamily="system-ui" fill="#7c3aed" opacity={0.6}>🌍</text>
-            <text x={BOARD_SIZE / 2} y={BOARD_SIZE / 2 + 10} textAnchor="middle" fontSize={22} fontWeight="900" fontFamily="system-ui" fill="#a78bfa" opacity={0.5} letterSpacing={2}>MR. WORLDWIDE</text>
-            <text x={BOARD_SIZE / 2} y={BOARD_SIZE / 2 + 35} textAnchor="middle" fontSize={10} fill="#475569" fontFamily="system-ui" letterSpacing={4}>GLOBAL MONOPOLY</text>
-          </>
-        )}
+        {/* Center label */}
+        <text x={BS/2} y={BS/2 - 85} textAnchor="middle" fontSize={12}
+          fill="#2d2a4a" letterSpacing={5} fontWeight="700"
+          style={{ userSelect: "none" }}>
+          BOARD PREVIEW
+        </text>
+        <text x={BS/2} y={BS/2 - 60} textAnchor="middle" fontSize={26}
+          fill="#4c3a8a" fontWeight="900" letterSpacing={2}
+          style={{ userSelect: "none" }}>
+          Mr. Worldwide
+        </text>
+        <text x={BS/2} y={BS/2 - 32} textAnchor="middle" fontSize={48}
+          style={{ userSelect: "none" }}>
+          🌍
+        </text>
 
-        {tiles.map((tile) => {
-          const [x, y, w, h, rot] = getTilePosition(tile);
-          const ownership = properties.find((p) => p.tileId === tile.id);
-          const playersOnTile = (playersByPosition[tile.id] || []);
-          return (
-            <TileCard key={tile.id} tile={tile} x={x} y={y} width={w} height={h} rotation={rot} ownership={ownership} players={players} isSelected={selectedTileId === tile.id} onSelect={selectTile} isCurrentPosition={playersOnTile.length > 0} />
-          );
-        })}
+        {/* All tiles */}
+        {tiles.map(tile => (
+          <TileCard
+            key={tile.id}
+            tile={tile}
+            ownership={properties.find(p => p.tileId === tile.id)}
+            players={players}
+            isSelected={selectedTileId === tile.id}
+            onSelect={selectTile}
+          />
+        ))}
 
-        {Object.entries(playersByPosition).map(([posStr, posPlayers]) => {
+        {/* Player tokens */}
+        {Object.entries(byPos).map(([posStr, posPlayers]) => {
           const pos = parseInt(posStr);
-          const center = getTokenCenter(pos);
-          return posPlayers.map((player, idx) => (
-            <PlayerToken key={player.id} player={player} position={center} index={idx} totalAtPosition={posPlayers.length} />
-          ));
+          const [cx, cy] = getTokenCenter(pos);
+          return posPlayers.map((player, idx) => {
+            const total = posPlayers.length;
+            const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
+            return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} />;
+          });
         })}
 
+        {/* Current player pulse ring */}
         {currentPlayer && !currentPlayer.isBankrupt && (() => {
-          const center = getTokenCenter(currentPlayer.position);
+          const [cx, cy] = getTokenCenter(currentPlayer.position);
           return (
-            <motion.circle cx={center[0]} cy={center[1]} r={16} fill="none" stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2} opacity={0.6} animate={{ r: [14, 18, 14], opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} />
+            <motion.circle cx={cx} cy={cy} r={15} fill="none"
+              stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2.5}
+              animate={{ r: [13, 19, 13], opacity: [0.2, 0.7, 0.2] }}
+              transition={{ duration: 1.5, repeat: Infinity }} />
           );
         })()}
-      </svg>
 
-      {gameState && (phase === "rolling" || phase === "buying") && (
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-black/50 backdrop-blur-sm rounded-xl p-4 border border-violet-500/40 flex flex-col items-center gap-3 pointer-events-auto">
-            <div className="flex gap-3">
-              <DiceRenderer value={gameState.diceValues[0]} rolling={rolling} />
-              <DiceRenderer value={gameState.diceValues[1]} rolling={rolling} />
-            </div>
-            {gameState.diceValues[0] === gameState.diceValues[1] && <p className="text-yellow-400 font-bold text-xs">Double!</p>}
-            {onRoll && (
-              <motion.button onClick={onRoll} disabled={rolling} className="px-6 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-all" whileTap={{ scale: 0.95 }}>
-                {rolling ? "Rolling..." : "Roll"}
-              </motion.button>
-            )}
-            {buyPanel && <div className="w-full mt-3">{buyPanel}</div>}
-          </div>
-        </motion.div>
-      )}
+        {/* Dice + roll button in center */}
+        {onRoll && (
+          <CenterDice
+            values={diceValues}
+            rolling={rolling}
+            canRoll={canRoll}
+            isMyTurn={isMyTurn}
+            phase={phase}
+            onRoll={onRoll}
+          />
+        )}
+
+        {/* Buy panel overlay */}
+        {buyPanel && (
+          <foreignObject x={CS + 20} y={BS/2 + 80} width={BS - CS*2 - 40} height={120}>
+            <div>{buyPanel}</div>
+          </foreignObject>
+        )}
+      </svg>
     </div>
   );
 }

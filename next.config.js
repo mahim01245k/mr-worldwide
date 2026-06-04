@@ -9,5 +9,10 @@ const nextConfig = {
     });
     return config;
   },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "flagcdn.com" }
+    ],
+  },
 };
 module.exports = nextConfig;
