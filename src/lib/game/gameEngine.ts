@@ -11,7 +11,7 @@ export function createGame(roomCode: string, hostId: string, hostName: string): 
     id: hostId,
     name: hostName,
     color: PLAYER_COLORS[0],
-    position: 34,
+    position: 0,
     cash: DEFAULT_SETTINGS.startingCash,
     netWorth: DEFAULT_SETTINGS.startingCash,
     properties: [],
@@ -60,7 +60,7 @@ export function addPlayerToGame(state: GameState, playerId: string, playerName: 
     id: playerId,
     name: playerName,
     color: PLAYER_COLORS[colorIndex],
-    position: 34,
+    position: 0,
     cash: state.settings.startingCash,
     netWorth: state.settings.startingCash,
     properties: [],
@@ -98,7 +98,7 @@ export function startGame(state: GameState): GameState {
 function sendToJail(player: Player): Player {
   return {
     ...player,
-    position: 23,
+    position: 36,
     inJail: true,
     jailTurns: 0,
     consecutiveDoubles: 0,
@@ -164,7 +164,7 @@ export function rollDice(state: GameState, playerId: string): GameState {
   }
 
   const newPosition = (updatedPlayer.position + total) % TOTAL_TILES;
- const passedStart = updatedPlayer.position < 34 && newPosition >= 34 && !currentPlayer.inJail;
+const passedStart = newPosition < updatedPlayer.position && !currentPlayer.inJail;
   if (passedStart) {
     updatedPlayer = { ...updatedPlayer, cash: updatedPlayer.cash + 200 };
   }

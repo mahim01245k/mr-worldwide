@@ -30,16 +30,7 @@ function getTileLayout(tile: BoardTile): {
   side: "bottom" | "right" | "top" | "left" | "corner";
   textRot: number; bandEdge: "top" | "bottom" | "left" | "right";
 } {
-  // We explicitly map your 47 IDs into a perfect clockwise perimeter
-  const ORDERED_IDS = [
-    34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, // Top-Left -> Top Edge
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, // Top-Right -> Right Edge
-    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, // Bottom-Right -> Bottom Edge
-    23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 // Bottom-Left -> Left Edge
-  ];
-
-  const i = ORDERED_IDS.indexOf(tile.id);
-  if (i === -1) return { x: 0, y: 0, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
+  const i = tile.id;
 
   // 1. Top-Left Corner (START)
   if (i === 0) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
@@ -50,7 +41,7 @@ function getTileLayout(tile: BoardTile): {
     return { x, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
   }
 
-  // 3. Top-Right Corner (Go to Prison)
+  // 3. Top-Right Corner
   if (i === 12) return { x: BS - CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
 
   // 4. Right Edge (Top to Bottom)
@@ -59,7 +50,7 @@ function getTileLayout(tile: BoardTile): {
     return { x: BS - CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
   }
 
-  // 5. Bottom-Right Corner (Vacation)
+  // 5. Bottom-Right Corner
   if (i === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
 
   // 6. Bottom Edge (Right to Left)
@@ -73,7 +64,6 @@ function getTileLayout(tile: BoardTile): {
 
   // 8. Left Edge (Bottom to Top)
   if (i > 36) {
-    // Left edge only has 10 tiles left to complete the loop, so we size them to fit exactly
     const leftTW = (BS - CS * 2) / 10;
     const y = BS - CS - (i - 36) * leftTW;
     return { x: 0, y, w: CS, h: leftTW, side: "left", textRot: 90, bandEdge: "right" };

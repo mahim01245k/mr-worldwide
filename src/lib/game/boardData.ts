@@ -60,7 +60,7 @@ export const COLOR_HEX: Record<PropertyColor, string> = {
 // bottom-right → VACATION     position:"bottom", index:12
 // bottom-left  → GO TO PRISON position:"bottom", index:0
 
-export const BOARD_TILES: BoardTile[] = [
+const RAW_BOARD_TILES: BoardTile[] = [
   // ── CORNERS (declared first for clarity) ──────────────────────────────────
   { id: 0,  type: "go-to-prison", name: "Go to Prison",
     position: "bottom", index: 0,  color: "none" },
@@ -123,8 +123,7 @@ export const BOARD_TILES: BoardTile[] = [
   { id: 46, type: "utility",  name: "Water Works", subname: "Utility",  flagCode: "gb", price: 150,                                                         color: "none",                                                                                                  position: "left",   index: 10 },
 ];
 
-export const TOTAL_TILES = 47;
-export const CORNER_TILE_IDS = [0, 12, 23, 34];
+
 
 export const TREASURE_CARDS = [
   { id: 1,  text: "Bank dividend! Collect $50.",                         action: "collect",           amount: 50  },
@@ -167,3 +166,19 @@ export function getCornerTiles(): BoardTile[] {
     t.type === "vacation" || t.type === "go-to-prison"
   );
 }
+// The exact clockwise sequence of your original IDs starting from Top-Left
+const CLOCKWISE_ORDER = [
+  34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, // Top edge
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,               // Right edge
+  12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,         // Bottom edge
+  23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33          // Left edge
+];
+
+// Auto-remap the IDs to 0-46 and export it as the official BOARD_TILES
+export const BOARD_TILES: BoardTile[] = RAW_BOARD_TILES.map(tile => ({
+  ...tile,
+  id: CLOCKWISE_ORDER.indexOf(tile.id)
+})).sort((a, b) => a.id - b.id);
+
+export const TOTAL_TILES = 47;
+export const CORNER_TILE_IDS = [0, 12, 24, 36]; // Updated corner IDs
