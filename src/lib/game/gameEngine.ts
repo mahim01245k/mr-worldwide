@@ -230,24 +230,14 @@ function processLanding(state: GameState, playerId: string, position: number): G
 
     case "treasure": {
       const card = TREASURE_CARDS[Math.floor(Math.random() * TREASURE_CARDS.length)];
-      return {
-        ...state,
-        phase: "card",
-        currentCard: { type: "treasure", card },
-        log: [...state.log, createLog("card", `${currentPlayer.name} drew a Treasure card!`, playerId)],
-        updatedAt: Date.now(),
-      };
+      // Instantly apply the card effect and log it, skipping the popup phase
+      return processCard({ ...state, currentCard: { type: "treasure", card } }, playerId);
     }
 
     case "surprise": {
       const card = SURPRISE_CARDS[Math.floor(Math.random() * SURPRISE_CARDS.length)];
-      return {
-        ...state,
-        phase: "card",
-        currentCard: { type: "surprise", card },
-        log: [...state.log, createLog("card", `${currentPlayer.name} drew a Surprise card!`, playerId)],
-        updatedAt: Date.now(),
-      };
+      // Instantly apply the card effect and log it, skipping the popup phase
+      return processCard({ ...state, currentCard: { type: "surprise", card } }, playerId);
     }
 
     case "go-to-prison": {

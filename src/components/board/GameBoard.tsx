@@ -449,8 +449,7 @@ export function GameBoard({
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
         className="w-full h-full"
-        style={{ maxWidth: 900, maxHeight: 900,
-          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))" }}
+        style={{ filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))" }}
       >
         <defs>
           {/* Flag clip paths are defined inline per tile */}
