@@ -222,10 +222,16 @@ export default function GamePage() {
           </div>
 
           {/* Board area */}
-          <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative mt-10">
-            <GameBoard onRoll={handleRoll} canRoll={canRoll} rolling={rolling} isMyTurn={isMyTurn} phase={gameState.phase} buyPanel={buyPanel} />
-            <TileDetail />
-          </div>
+          <div className="flex-1 flex items-center justify-center p-4">
+        <GameBoard 
+          onRoll={handleRoll} 
+          canRoll={canRoll} 
+          rolling={rolling} 
+          isMyTurn={isMyTurn} 
+          phase={gameState.phase} 
+          buyPanel={buyPanel} 
+        />
+      </div>
 
           {/* Bottom controls */}
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
