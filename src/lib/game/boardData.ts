@@ -123,7 +123,7 @@ export const BOARD_TILES: BoardTile[] = [
   { id: 46, type: "utility",  name: "Water Works", subname: "Utility",  flagCode: "gb", price: 150,                                                         color: "none",                                                                                                  position: "left",   index: 10 },
 ];
 
-export const TOTAL_TILES = 48;
+export const TOTAL_TILES = 47;
 export const CORNER_TILE_IDS = [0, 12, 23, 34];
 
 export const TREASURE_CARDS = [

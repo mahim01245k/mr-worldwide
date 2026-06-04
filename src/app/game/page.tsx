@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +20,7 @@ function GameOverModal() {
   const winner = gameState.players.find(p => p.id === gameState.winner);
   const isWinner = winner?.id === myPlayerId;
   const ranked = [...gameState.players].sort((a, b) => b.netWorth - a.netWorth);
+  
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -138,50 +138,32 @@ export default function GamePage() {
       <Notifications />
       <GameOverModal />
 
-      {/* ── TOP HEADER ── */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10" style={{ background: "#1a1730" }}>
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <span className="text-2xl font-black text-white tracking-tight">
-            MR.<span className="text-violet-400">WORLDWIDE</span>
-          </span>
-          <div className={`text-xs px-2 py-0.5 rounded-full ${isConnected ? "bg-green-900/40 text-green-400" : "bg-red-900/40 text-red-400"}`}>
-            {isConnected ? "● Online" : "○ Offline"}
-          </div>
-        </div>
-
-        {/* Share box */}
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 text-xs">Share this game</span>
-          <div className="flex items-center gap-1 bg-[#0f0d20] border border-white/10 rounded-lg px-3 py-1.5">
-            <span className="text-violet-300 font-mono text-sm">{typeof window !== "undefined" ? window.location.origin : ""}/room/{roomCode}</span>
-            <button onClick={handleCopy} className="ml-2 text-slate-400 hover:text-white transition-colors">
-              {copied ? <span className="text-green-400 text-xs">✓ Copied!</span> : <Copy size={14} />}
-            </button>
-          </div>
-          <button className="flex items-center gap-1 text-xs border border-white/10 rounded-lg px-3 py-1.5 text-slate-300 hover:bg-white/5 transition-colors">
-            <Settings size={12} /> View room settings
-          </button>
-        </div>
-
-        {/* Current turn */}
-        <div className="flex items-center gap-2">
-          {currentPlayer && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
-              style={{ borderColor: `${PLAYER_COLOR_HEX[currentPlayer.color]}50`, background: `${PLAYER_COLOR_HEX[currentPlayer.color]}15` }}>
-              <span style={{ color: PLAYER_COLOR_HEX[currentPlayer.color] }}>{currentPlayer.avatar}</span>
-              <span className="text-white text-sm font-bold">{isMyTurn ? "Your turn" : `${currentPlayer.name} is playing...`}</span>
-            </div>
-          )}
-          <span className="text-slate-500 text-xs">Round {gameState.round}/{gameState.maxRounds}</span>
-        </div>
-      </div>
-
-      {/* ── MAIN LAYOUT ── */}
+      {/* ── 3-COLUMN MAIN LAYOUT ── */}
       <div className="flex flex-1 min-h-0">
 
-        {/* ── LEFT SIDEBAR ── */}
+        {/* ── LEFT SIDEBAR (Brand, Link, Chat, Activity) ── */}
         <div className="w-72 flex flex-col border-r border-white/10 min-h-0" style={{ background: "#15132a" }}>
+          
+          {/* Brand & Share Link */}
+          <div className="p-4 border-b border-white/10" style={{ background: "#1a1730" }}>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl font-black text-white tracking-tight">
+                MR.<span className="text-violet-400">WORLDWIDE</span>
+              </span>
+              <div className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${isConnected ? "bg-green-900/40 text-green-400" : "bg-red-900/40 text-red-400"}`}>
+                {isConnected ? "Online" : "Offline"}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 bg-[#0f0d20] border border-white/10 rounded-lg px-3 py-2">
+              <span className="text-violet-300 font-mono text-xs truncate flex-1">
+                {typeof window !== "undefined" ? window.location.origin : ""}/room/{roomCode}
+              </span>
+              <button onClick={handleCopy} className="text-slate-400 hover:text-white transition-colors ml-1">
+                {copied ? <span className="text-green-400 text-xs">✓</span> : <Copy size={14} />}
+              </button>
+            </div>
+          </div>
+
           {/* Chat */}
           <div className="flex-1 flex flex-col min-h-0 p-3">
             <div className="flex items-center justify-between mb-2">
@@ -226,18 +208,31 @@ export default function GamePage() {
 
         {/* ── CENTER: BOARD ── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+          
+          {/* Turn Indicator (Floating Center) */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-[#1a1730]/90 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-full shadow-xl">
+            {currentPlayer && (
+              <div className="flex items-center gap-2">
+                <span className="text-lg" style={{ color: PLAYER_COLOR_HEX[currentPlayer.color] }}>{currentPlayer.avatar}</span>
+                <span className="text-white text-sm font-bold">{isMyTurn ? "Your turn!" : `${currentPlayer.name} is playing...`}</span>
+              </div>
+            )}
+            <div className="w-px h-4 bg-white/20 mx-2" />
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Round {gameState.round}/{gameState.maxRounds}</span>
+          </div>
+
           {/* Board area */}
-          <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
+          <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative mt-10">
             <GameBoard onRoll={handleRoll} canRoll={canRoll} rolling={rolling} isMyTurn={isMyTurn} phase={gameState.phase} buyPanel={buyPanel} />
             <TileDetail />
           </div>
 
-          {/* Bottom controls - simplified */}
+          {/* Bottom controls */}
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
             <div className="flex items-start gap-6 max-w-3xl mx-auto">
               <div className="flex-1">
                 <AnimatePresence mode="wait">
-                      {/* AUCTION */}
+                  {/* AUCTION */}
                   {gameState.phase === "auction" && gameState.currentAuction && (
                     <motion.div key="auction" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                       className="bg-amber-950/40 border border-amber-700/40 rounded-xl p-4">
@@ -309,16 +304,15 @@ export default function GamePage() {
                       )}
                     </motion.div>
                   )}
-
-                  {/* Selected tile info - hidden */}
                 </AnimatePresence>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT SIDEBAR ── */}
+        {/* ── RIGHT SIDEBAR (Players, Trades, Properties) ── */}
         <div className="w-72 flex flex-col border-l border-white/10 min-h-0" style={{ background: "#15132a" }}>
+          
           {/* Players list */}
           <div className="p-3 border-b border-white/10">
             <div className="space-y-1.5">

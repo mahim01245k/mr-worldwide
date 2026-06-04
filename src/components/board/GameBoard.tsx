@@ -28,57 +28,58 @@ const TH  = CS;                   // tile height = corner size
 function getTileLayout(tile: BoardTile): {
   x: number; y: number; w: number; h: number;
   side: "bottom" | "right" | "top" | "left" | "corner";
-  textRot: number; // rotation for text content around tile center
-  bandEdge: "top" | "bottom" | "left" | "right"; // which edge gets the color band
+  textRot: number; bandEdge: "top" | "bottom" | "left" | "right";
 } {
-  const { position, index } = tile;
-  const isCorner = index === 0 || (position === "bottom" && index === 12);
+  // We explicitly map your 47 IDs into a perfect clockwise perimeter
+  const ORDERED_IDS = [
+    34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, // Top-Left -> Top Edge
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, // Top-Right -> Right Edge
+    12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, // Bottom-Right -> Bottom Edge
+    23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 // Bottom-Left -> Left Edge
+  ];
 
-  if (position === "bottom") {
-    if (index === 0) {
-      // START corner - bottom left
-      return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
-    }
-    if (index === 12) {
-      // VACATION corner - bottom right
-      return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
-    }
-    // Regular bottom tiles — left to right, idx 1..11
-    const x = CS + (index - 1) * TW;
-    return { x, y: BS - TH, w: TW, h: TH, side: "bottom", textRot: 0, bandEdge: "top" };
+  const i = ORDERED_IDS.indexOf(tile.id);
+  if (i === -1) return { x: 0, y: 0, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
+
+  // 1. Top-Left Corner (START)
+  if (i === 0) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
+
+  // 2. Top Edge (Left to Right)
+  if (i > 0 && i < 12) {
+    const x = CS + (i - 1) * TW;
+    return { x, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
   }
 
-  if (position === "right") {
-    // Right column: bottom-to-top, idx 0 = bottom, goes upward
-    // In the image right column is read rotated — text reads bottom-to-top
-    const totalRight = BOARD_TILES.filter(t => t.position === "right").length;
-    const fromBottom = totalRight - 1 - index;
-    return {
-      x: BS - TH,
-      y: CS + fromBottom * TW,
-      w: TH, h: TW,
-      side: "right", textRot: -90, bandEdge: "left"
-    };
+  // 3. Top-Right Corner (Go to Prison)
+  if (i === 12) return { x: BS - CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
+
+  // 4. Right Edge (Top to Bottom)
+  if (i > 12 && i < 24) {
+    const y = CS + (i - 13) * TW;
+    return { x: BS - CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
   }
 
-  if (position === "top") {
-    // Top row: right-to-left, idx 0 = rightmost
-    // In the image top row text reads upside-down (rotated 180°)
-    const x = BS - CS - (index + 1) * TW;
-    return { x, y: 0, w: TW, h: TH, side: "top", textRot: 180, bandEdge: "bottom" };
+  // 5. Bottom-Right Corner (Vacation)
+  if (i === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
+
+  // 6. Bottom Edge (Right to Left)
+  if (i > 24 && i < 36) {
+    const x = BS - CS - (i - 24) * TW;
+    return { x, y: BS - CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
   }
 
-  if (position === "left") {
-    // Left column: top-to-bottom, idx 0 = top
-    // In the image left column text reads top-to-bottom (rotated 90°)
-    return {
-      x: 0, y: CS + index * TW,
-      w: TH, h: TW,
-      side: "left", textRot: 90, bandEdge: "right"
-    };
+  // 7. Bottom-Left Corner (Prison)
+  if (i === 36) return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
+
+  // 8. Left Edge (Bottom to Top)
+  if (i > 36) {
+    // Left edge only has 10 tiles left to complete the loop, so we size them to fit exactly
+    const leftTW = (BS - CS * 2) / 10;
+    const y = BS - CS - (i - 36) * leftTW;
+    return { x: 0, y, w: CS, h: leftTW, side: "left", textRot: 90, bandEdge: "right" };
   }
 
-  return { x: 0, y: 0, w: TW, h: TH, side: "bottom", textRot: 0, bandEdge: "top" };
+  return { x: 0, y: 0, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
 }
 
 function getTokenCenter(tileId: number): [number, number] {
