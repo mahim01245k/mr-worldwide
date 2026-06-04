@@ -447,19 +447,21 @@ export function GameBoard({
   return (
     <div className="w-full h-full flex items-center justify-center">
       <svg
-        viewBox={`0 0 ${BS} ${BS}`}
-        className="w-full h-full"
-        preserveAspectRatio="xMidYMid meet"
-        style={{
-          width: "100%",
-          height: "100%",
-          maxHeight: "85vh", // Limits board to 85% of screen height to prevent overflow
-          maxWidth: "85vw",  // Limits board to 85% of screen width
-          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
-          display: "block",
-          margin: "0 auto"
-        }}
-      >
+  viewBox={`0 0 ${BS} ${BS}`}
+  // Remove w-full h-full from className to avoid conflicting constraints
+  className="block" 
+  preserveAspectRatio="xMidYMid meet"
+  style={{
+    width: "100%",
+    height: "100%",
+    // This is the magic property: it ensures the entire board is visible 
+    // without stretching, fitting within the parent container's dimensions.
+    objectFit: "contain",
+    filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
+    display: "block",
+    margin: "0 auto"
+  }}
+>
         <defs>
           {/* Flag clip paths are defined inline per tile */}
         </defs>

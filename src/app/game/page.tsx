@@ -222,7 +222,8 @@ export default function GamePage() {
           </div>
 
           {/* Board area */}
-            <div className="flex-1 w-full flex items-center justify-center p-2 min-h-0">
+          <div className="flex-1 w-full h-full flex items-center justify-center p-2 overflow-hidden">
+            <div className="w-full h-full max-w-[90vh] max-h-[90vw] aspect-square">
               <GameBoard
                 onRoll={handleRoll}
                 canRoll={canRoll}
@@ -232,7 +233,7 @@ export default function GamePage() {
                 buyPanel={buyPanel}
               />
             </div>
-        
+          </div>
 
           {/* Bottom controls */}
           <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
