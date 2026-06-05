@@ -222,8 +222,8 @@ export default function GamePage() {
           </div>
 
           {/* Board area */}
-          <div className="flex-1 w-full h-full flex items-center justify-center p-2 overflow-hidden">
-            <div className="w-full h-full max-w-[90vh] max-h-[90vw] aspect-square">
+          <div className="flex-1 w-full relative min-h-0">
+            <div className="absolute inset-0 flex items-center justify-center p-2">
               <GameBoard
                 onRoll={handleRoll}
                 canRoll={canRoll}
