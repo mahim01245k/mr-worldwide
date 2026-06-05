@@ -6,7 +6,7 @@ import { useGameStore } from "@/lib/store/gameStore";
 import { Player, PropertyOwnership, PLAYER_COLOR_HEX } from "@/types/game";
 
 // ── Board constants ──────────────────────────────────────────────────────────
-const BS = 1200;   // board size
+const BS = 800;   // board size
 const CS = 164;   // corner tile size
 // 11 tiles per non-corner side (from the image: bottom has 11 non-corner tiles)
 const TW = (BS - CS * 2) / 11;  // ~62.9px non-corner tile width
