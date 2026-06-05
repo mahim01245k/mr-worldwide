@@ -211,6 +211,7 @@ function processLanding(state: GameState, playerId: string, position: number): G
     case "utility": {
       const owned = state.properties.find((p) => p.tileId === position);
       if (!owned) {
+        // Keep "buying" phase for properties so the user can choose to buy or auction
         return { ...state, phase: "buying" };
       } else if (owned.ownerId === playerId) {
         return advanceTurn(state);
@@ -225,18 +226,19 @@ function processLanding(state: GameState, playerId: string, position: number): G
         tile.taxAmount && tile.taxAmount < 1
           ? Math.floor(currentPlayer.cash * tile.taxAmount)
           : tile.taxAmount || 0;
+      // Instead of waiting for a UI popup, pay immediately and advance
       return payTax(state, playerId, amount, tile.name);
     }
 
     case "treasure": {
       const card = TREASURE_CARDS[Math.floor(Math.random() * TREASURE_CARDS.length)];
-      // Instantly apply the card effect and log it, skipping the popup phase
+      // Automatically apply the card and log it
       return processCard({ ...state, currentCard: { type: "treasure", card } }, playerId);
     }
 
     case "surprise": {
       const card = SURPRISE_CARDS[Math.floor(Math.random() * SURPRISE_CARDS.length)];
-      // Instantly apply the card effect and log it, skipping the popup phase
+      // Automatically apply the card and log it
       return processCard({ ...state, currentCard: { type: "surprise", card } }, playerId);
     }
 
@@ -244,22 +246,21 @@ function processLanding(state: GameState, playerId: string, position: number): G
       const players = state.players.map((p) =>
         p.id === playerId ? sendToJail(p) : p
       );
-      return {
+      // Advance turn immediately after going to jail
+      return advanceTurn({
         ...state,
         players,
-        phase: "rolling",
         log: [...state.log, createLog("jail", `${currentPlayer.name} goes to jail!`, playerId)],
         updatedAt: Date.now(),
-      };
+      });
     }
 
     case "vacation": {
-      const vacationState: GameState = {
+      return advanceTurn({
         ...state,
         log: [...state.log, createLog("system", `${currentPlayer.name} is on vacation!`, playerId)],
         updatedAt: Date.now(),
-      };
-      return advanceTurn(vacationState);
+      });
     }
 
     default:
