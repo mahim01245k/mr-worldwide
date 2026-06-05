@@ -7,7 +7,7 @@ import { Player, PropertyOwnership, PLAYER_COLOR_HEX } from "@/types/game";
 
 // ── Board constants ──────────────────────────────────────────────────────────
 const BS = 900;   // board size
-const CS = 104;   // corner tile size
+const CS = 114;   // corner tile size
 // 11 tiles per non-corner side (from the image: bottom has 11 non-corner tiles)
 const TW = (BS - CS * 2) / 11;  // ~62.9px non-corner tile width
 const TH = CS;                   // tile height = corner size
