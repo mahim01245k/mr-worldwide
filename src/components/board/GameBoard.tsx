@@ -159,34 +159,11 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       style={{ cursor: "pointer" }}
     >
       {/* Base background */}
-      <defs>
-        <linearGradient id={`tile-grad-${tile.id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#21386f" />
-          <stop offset="35%" stopColor="#243564" />
-          <stop offset="70%" stopColor="#2b244c" />
-          <stop offset="100%" stopColor="#46385e" />
-        </linearGradient>
-      </defs>
-
-      <rect
-        x={0}
-        y={0}
-        width={w}
-        height={h}
-        fill={`url(#tile-grad-${tile.id})`}
-        stroke="rgba(255,255,255,0.08)"
-        strokeWidth={0.5}
-        rx={0}
-      />
-
-      {/* inner edge highlight for separation without gaps */}
-      <rect
-        x={0.5}
-        y={0.5}
-        width={w - 1}
-        height={h - 1}
-        fill="none"
-        stroke="rgba(255,255,255,0.05)"
+      <rect x={0} y={0} width={w} height={h}
+        fill={isSelected ? "#1e1a3a" : "#13112a"}
+        stroke={isSelected ? "#a78bfa" : ownerColor ? ownerColor + "55" : "#1e1b4b"}
+        strokeWidth={isSelected ? 2 : 0.8}
+        rx={2}
       />
 
       {/* Color band */}
@@ -238,28 +215,18 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
           <g>
             {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
                 Instead use a clipped circle with image */}
-
-            <clipPath id={`flag-${tile.id}`}>
-              <circle cx={w / 2} cy={h * 0.28} r={12} />
+            <clipPath id={`flag-clip-${tile.id}`}>
+              <circle cx={cx} cy={cy - vH * 0.15} r={12} />
             </clipPath>
-
             <image
-              href={`https://flagcdn.com/w40/${tile.flagCode?.toLowerCase()}.png`}
-              x={w / 2 - 12}
-              y={h * 0.28 - 12}
-              width={24}
-              height={24}
-              clipPath={`url(#${`flag-${tile.id}`})`}
+              href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
+              x={cx - 12} y={cy - vH * 0.15 - 12}
+              width={24} height={24}
+              clipPath={`url(#flag-clip-${tile.id})`}
+              preserveAspectRatio="xMidYMid slice"
             />
-
-            <circle
-              cx={w / 2}
-              cy={h * 0.28}
-              r={12}
-              fill="none"
-              stroke="rgba(255,255,255,0.25)"
-            />
-
+            <circle cx={cx} cy={cy - vH * 0.15} r={12}
+              fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
 
             {/* City name */}
             <text x={cx} y={cy + vH * 0.1} textAnchor="middle" dominantBaseline="middle"
@@ -480,21 +447,21 @@ export function GameBoard({
   return (
     <div className="w-full h-full flex items-center justify-center">
       <svg
-        viewBox={`0 0 ${BS} ${BS}`}
-        // Remove w-full h-full from className to avoid conflicting constraints
-        className="block"
-        preserveAspectRatio="xMidYMid meet"
-        style={{
-          width: "100%",
-          height: "100%",
-          // This is the magic property: it ensures the entire board is visible 
-          // without stretching, fitting within the parent container's dimensions.
-          objectFit: "contain",
-          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
-          display: "block",
-          margin: "0 auto"
-        }}
-      >
+  viewBox={`0 0 ${BS} ${BS}`}
+  // Remove w-full h-full from className to avoid conflicting constraints
+  className="block" 
+  preserveAspectRatio="xMidYMid meet"
+  style={{
+    width: "100%",
+    height: "100%",
+    // This is the magic property: it ensures the entire board is visible 
+    // without stretching, fitting within the parent container's dimensions.
+    objectFit: "contain",
+    filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
+    display: "block",
+    margin: "0 auto"
+  }}
+>
         <defs>
           {/* Flag clip paths are defined inline per tile */}
         </defs>
