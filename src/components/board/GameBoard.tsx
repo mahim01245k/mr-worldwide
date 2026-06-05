@@ -445,21 +445,18 @@ export function GameBoard({
   }, {});
 
  return (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-full flex items-center justify-center overflow-hidden">
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
-        className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
+        className="w-full h-full"
         style={{
+          display: "block", // <--- THIS IS THE KEY FIX
           width: "100%",
           height: "100%",
-          // 👇 CHANGE THESE TWO LINES 👇
-          maxHeight: "100%", 
           maxWidth: "100%",
-          // ☝️ ☝️ ☝️ ☝️ ☝️
-          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
-          display: "block",
-          margin: "0 auto"
+          maxHeight: "100%",
+          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))"
         }}
       >
         <defs>
