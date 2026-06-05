@@ -445,102 +445,95 @@ export function GameBoard({
   }, {});
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <svg
-  viewBox={`0 0 ${BS} ${BS}`}
-  // Remove w-full h-full from className to avoid conflicting constraints
-  className="block" 
-  preserveAspectRatio="xMidYMid meet"
-  style={{
-    width: "100%",
-    height: "100%",
-    // This is the magic property: it ensures the entire board is visible 
-    // without stretching, fitting within the parent container's dimensions.
-    objectFit: "contain",
-    filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
-    display: "block",
-    margin: "0 auto"
-  }}
->
-        <defs>
-          {/* Flag clip paths are defined inline per tile */}
-        </defs>
+    <div className="w-full h-full flex items-center justify-center overflow-hidden p-2">
+      {/* This wrapper div ensures the square board shrinks perfectly if either width OR height is limited */}
+      <div className="w-full h-full max-w-full max-h-full aspect-square flex items-center justify-center">
+        <svg
+          viewBox={`0 0 ${BS} ${BS}`}
+          className="w-full h-full select-none"
+          style={{
+            filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.55))",
+          }}
+        >
+          <defs>
+            {/* Flag clip paths are defined inline per tile */}
+          </defs>
 
-        {/* Board background */}
-        <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
+          {/* Board background */}
+          <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
 
-        {/* Inner center */}
-        <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#080616" rx={4} />
+          {/* Inner center */}
+          <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#080616" rx={4} />
 
-        {/* Center label */}
-        <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
-          fill="#2d2a4a" letterSpacing={5} fontWeight="700"
-          style={{ userSelect: "none" }}>
-          BOARD PREVIEW
-        </text>
-        <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
-          fill="#4c3a8a" fontWeight="900" letterSpacing={2}
-          style={{ userSelect: "none" }}>
-          Mr. Worldwide
-        </text>
-        <text x={BS / 2} y={BS / 2 - 32} textAnchor="middle" fontSize={48}
-          style={{ userSelect: "none" }}>
-          🌍
-        </text>
+          {/* Center label */}
+          <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
+            fill="#2d2a4a" letterSpacing={5} fontWeight="700"
+            style={{ userSelect: "none" }}>
+            BOARD PREVIEW
+          </text>
+          <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
+            fill="#4c3a8a" fontWeight="900" letterSpacing={2}
+            style={{ userSelect: "none" }}>
+            Mr. Worldwide
+          </text>
+          <text x={BS / 2} y={BS / 2 - 32} textAnchor="middle" fontSize={48}
+            style={{ userSelect: "none" }}>
+            🌍
+          </text>
 
-        {/* All tiles */}
-        {tiles.map(tile => (
-          <TileCard
-            key={tile.id}
-            tile={tile}
-            ownership={properties.find(p => p.tileId === tile.id)}
-            players={players}
-            isSelected={selectedTileId === tile.id}
-            onSelect={selectTile}
-          />
-        ))}
+          {/* All tiles */}
+          {tiles.map(tile => (
+            <TileCard
+              key={tile.id}
+              tile={tile}
+              ownership={properties.find(p => p.tileId === tile.id)}
+              players={players}
+              isSelected={selectedTileId === tile.id}
+              onSelect={selectTile}
+            />
+          ))}
 
-        {/* Player tokens */}
-        {Object.entries(byPos).map(([posStr, posPlayers]) => {
-          const pos = parseInt(posStr);
-          const [cx, cy] = getTokenCenter(pos);
-          return posPlayers.map((player, idx) => {
-            const total = posPlayers.length;
-            const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
-            return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} />;
-          });
-        })}
+          {/* Player tokens */}
+          {Object.entries(byPos).map(([posStr, posPlayers]) => {
+            const pos = parseInt(posStr);
+            const [cx, cy] = getTokenCenter(pos);
+            return posPlayers.map((player, idx) => {
+              const total = posPlayers.length;
+              const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
+              return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} />;
+            });
+          })}
 
-        {/* Current player pulse ring */}
-        {currentPlayer && !currentPlayer.isBankrupt && (() => {
-          const [cx, cy] = getTokenCenter(currentPlayer.position);
-          return (
-            <motion.circle cx={cx} cy={cy} r={15} fill="none"
-              stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2.5}
-              animate={{ r: [13, 19, 13], opacity: [0.2, 0.7, 0.2] }}
-              transition={{ duration: 1.5, repeat: Infinity }} />
-          );
-        })()}
+          {/* Current player pulse ring */}
+          {currentPlayer && !currentPlayer.isBankrupt && (() => {
+            const [cx, cy] = getTokenCenter(currentPlayer.position);
+            return (
+              <motion.circle cx={cx} cy={cy} r={15} fill="none"
+                stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2.5}
+                animate={{ r: [13, 19, 13], opacity: [0.2, 0.7, 0.2] }}
+                transition={{ duration: 1.5, repeat: Infinity }} />
+            );
+          })()}
 
-        {/* Dice + roll button in center */}
-        {onRoll && (
-          <CenterDice
-            values={diceValues}
-            rolling={rolling}
-            canRoll={canRoll}
-            isMyTurn={isMyTurn}
-            phase={phase}
-            onRoll={onRoll}
-          />
-        )}
+          {/* Dice + roll button in center */}
+          {onRoll && (
+            <CenterDice
+              values={diceValues}
+              rolling={rolling}
+              canRoll={canRoll}
+              isMyTurn={isMyTurn}
+              phase={phase}
+              onRoll={onRoll}
+            />
+          )}
 
-        {/* Buy panel overlay */}
-        {buyPanel && (
-          <foreignObject x={CS + 20} y={BS / 2 + 80} width={BS - CS * 2 - 40} height={120}>
-            <div>{buyPanel}</div>
-          </foreignObject>
-        )}
-      </svg>
+          {/* Buy panel overlay */}
+          {buyPanel && (
+            <foreignObject x={CS + 20} y={BS / 2 + 80} width={BS - CS * 2 - 40} height={120}>
+              <div>{buyPanel}</div>
+            </foreignObject>
+          )}
+        </svg>
+      </div>
     </div>
-  );
-}
+  );}
