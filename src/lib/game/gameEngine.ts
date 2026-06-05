@@ -232,14 +232,12 @@ function processLanding(state: GameState, playerId: string, position: number): G
 
     case "treasure": {
       const card = TREASURE_CARDS[Math.floor(Math.random() * TREASURE_CARDS.length)];
-      // Automatically apply the card and log it
-      return processCard({ ...state, currentCard: { type: "treasure", card } }, playerId);
+      return resolveCardEffect(state, playerId, "treasure", card);
     }
 
     case "surprise": {
       const card = SURPRISE_CARDS[Math.floor(Math.random() * SURPRISE_CARDS.length)];
-      // Automatically apply the card and log it
-      return processCard({ ...state, currentCard: { type: "surprise", card } }, playerId);
+      return resolveCardEffect(state, playerId, "surprise", card);
     }
 
     case "go-to-prison": {
@@ -267,7 +265,90 @@ function processLanding(state: GameState, playerId: string, position: number): G
       return advanceTurn(state);
   }
 }
+function resolveCardEffect(state: GameState, playerId: string, type: "treasure" | "surprise", card: any): GameState {
+  const player = state.players.find((p) => p.id === playerId)!;
+  let updatedState = { ...state };
 
+  switch (card.action) {
+    case "collect":
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) =>
+          p.id === playerId ? { ...p, cash: p.cash + card.amount } : p
+        ),
+        log: [...updatedState.log, createLog("card", `${player.name} collected $${card.amount}: ${card.text}`, playerId, card.amount)],
+      };
+      break;
+
+    case "pay":
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) =>
+          p.id === playerId ? { ...p, cash: p.cash - card.amount } : p
+        ),
+        log: [...updatedState.log, createLog("card", `${player.name} paid $${card.amount}: ${card.text}`, playerId, card.amount)],
+      };
+      break;
+
+    case "collect-from-all": {
+      const collected = card.amount * (state.players.length - 1);
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) => {
+          if (p.id === playerId) return { ...p, cash: p.cash + collected };
+          return { ...p, cash: p.cash - card.amount };
+        }),
+        log: [...updatedState.log, createLog("card", `${player.name} collected $${card.amount} from each player!`, playerId, collected)],
+      };
+      break;
+    }
+
+    case "go-to-prison":
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) =>
+          p.id === playerId ? sendToJail(p) : p
+        ),
+        log: [...updatedState.log, createLog("jail", `${player.name} goes to jail!`, playerId)],
+      };
+      break;
+
+    case "jail-free":
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) =>
+          p.id === playerId ? { ...p, jailFreeCards: p.jailFreeCards + 1 } : p
+        ),
+        log: [...updatedState.log, createLog("card", `${player.name} got a Get Out of Jail Free card!`, playerId)],
+      };
+      break;
+
+    case "move-to-start":
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) =>
+          p.id === playerId ? { ...p, position: 34, cash: p.cash + 200 } : p
+        ),
+        log: [...updatedState.log, createLog("card", `${player.name} advances to START and collects $200!`, playerId, 200)],
+      };
+      break;
+
+    case "move-back": {
+      const newPos = Math.max(0, player.position - card.amount);
+      updatedState = {
+        ...updatedState,
+        players: updatedState.players.map((p) =>
+          p.id === playerId ? { ...p, position: newPos } : p
+        ),
+        log: [...updatedState.log, createLog("card", `${player.name} moves back ${card.amount} spaces!`, playerId)],
+      };
+      break;
+    }
+  }
+
+  // Directly advance the turn so the UI moves on immediately
+  return advanceTurn({ ...updatedState, updatedAt: Date.now() });
+}
 function payRent(
   state: GameState,
   payerId: string,
