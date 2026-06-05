@@ -222,16 +222,20 @@ export default function GamePage() {
           </div>
 
           {/* Board area */}
-          <div className="flex-1 w-full relative min-h-0">
+         <div className="flex-1 w-full relative min-h-0">
+            {/* The absolute inset-0 forces the container to obey the bounds of the flex column */}
             <div className="absolute inset-0 flex items-center justify-center p-2">
-              <GameBoard
-                onRoll={handleRoll}
-                canRoll={canRoll}
-                rolling={rolling}
-                isMyTurn={isMyTurn}
-                phase={gameState.phase}
-                buyPanel={buyPanel}
-              />
+              {/* The aspect-square ensures it never stretches into a rectangle */}
+              <div className="w-full h-full max-w-full max-h-full aspect-square flex items-center justify-center">
+                <GameBoard
+                  onRoll={handleRoll}
+                  canRoll={canRoll}
+                  rolling={rolling}
+                  isMyTurn={isMyTurn}
+                  phase={gameState.phase}
+                  buyPanel={buyPanel}
+                />
+              </div>
             </div>
           </div>
 

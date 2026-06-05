@@ -444,20 +444,27 @@ export function GameBoard({
     return acc;
   }, {});
 
-  return (
-    <div className="w-full h-full flex items-center justify-center overflow-hidden p-2">
-      {/* This wrapper div ensures the square board shrinks perfectly if either width OR height is limited */}
-      <div className="w-full h-full max-w-full max-h-full aspect-square flex items-center justify-center">
-        <svg
-          viewBox={`0 0 ${BS} ${BS}`}
-          className="w-full h-full select-none"
-          style={{
-            filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.55))",
-          }}
-        >
-          <defs>
-            {/* Flag clip paths are defined inline per tile */}
-          </defs>
+ return (
+    <div className="w-full h-full flex items-center justify-center">
+      <svg
+        viewBox={`0 0 ${BS} ${BS}`}
+        className="w-full h-full"
+        preserveAspectRatio="xMidYMid meet"
+        style={{
+          width: "100%",
+          height: "100%",
+          // 👇 CHANGE THESE TWO LINES 👇
+          maxHeight: "100%", 
+          maxWidth: "100%",
+          // ☝️ ☝️ ☝️ ☝️ ☝️
+          filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))",
+          display: "block",
+          margin: "0 auto"
+        }}
+      >
+        <defs>
+          {/* Flag clip paths are defined inline per tile */}
+        </defs>
 
           {/* Board background */}
           <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
@@ -535,5 +542,4 @@ export function GameBoard({
           )}
         </svg>
       </div>
-    </div>
   );}
