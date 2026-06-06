@@ -41,9 +41,9 @@ function getTileLayout(tile: BoardTile): {
     return { x: CS + (index - 1) * TW, y: BS-CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
   }
   if (position === "right") {
-    const y = CS + (9 - index) * TW;
-    return { x: BS-CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
-  }
+  const y = CS + (10 - index) * TW;
+  return { x: BS - CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
+}
   if (position === "top") {
     const x = BS - CS - (index + 1) * TW;
     return { x, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };

@@ -122,6 +122,7 @@ const RAW_BOARD_TILES: BoardTile[] = [
   { id: 44, type: "property", name: "New York",    subname: "USA",      flagCode: "us", price: 400, baseRent: 50, rentLevels: [50,200,600,1400,1700,2000], color: "darkblue", group: "americas-premium", mortgageValue: 200, houseCost: 200, hotelCost: 200, position: "left",   index: 8  },
   { id: 45, type: "treasure", name: "Treasure",    subname: "Community",                                                                                    color: "none",                                                                                                  position: "left",   index: 9  },
   { id: 46, type: "utility",  name: "Water Works", subname: "Utility",  flagCode: "gb", price: 150,                                                         color: "none",                                                                                                  position: "left",   index: 10 },
+  { id: 47, type: "surprise", name: "Surprise", color: "none", position: "right", index: 10 },
 ];
 
 
@@ -173,7 +174,7 @@ const CLOCKWISE_ORDER = [
   34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 
   
   // Right edge (Ensure this has exactly 11 IDs)
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
   
   // Bottom edge
   12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 
@@ -188,5 +189,5 @@ export const BOARD_TILES: BoardTile[] = RAW_BOARD_TILES.map(tile => ({
   id: CLOCKWISE_ORDER.indexOf(tile.id)
 })).sort((a, b) => a.id - b.id);
 
-export const TOTAL_TILES = 47;
+export const TOTAL_TILES = 48; // Total number of tiles on the board
 export const CORNER_TILE_IDS = [0, 12, 24, 36]; // Updated corner IDs
