@@ -63,7 +63,7 @@ function getTileLayout(tile: BoardTile): {
   if (i === 36) return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
 
   // 8. Left Edge (Bottom to Top)
-  if (i > 36) {
+  if (i >= 36) {
     // Change the denominator to match your actual number of tiles.
     // If you currently have 10 tiles, keep it as 10.
     // If you add an 11th tile, change this to 11.
