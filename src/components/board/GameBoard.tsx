@@ -25,34 +25,42 @@ const TH = CS;                   // tile height = corner size
 //
 // The color band is always on the OUTER edge of each tile.
 
+// Replace your entire getTileLayout function with this:
+
 function getTileLayout(tile: BoardTile): {
   x: number; y: number; w: number; h: number;
   side: "bottom" | "right" | "top" | "left" | "corner";
   textRot: number; bandEdge: "top" | "bottom" | "left" | "right";
 } {
- const { position, index } = tile;
+  const { position, index, id } = tile;
 
-  if (position === "bottom" && index === 0)  return { x: 0, y: BS-CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
-  if (position === "bottom" && index === 12) return { x: BS-CS, y: BS-CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
-  if (position === "right"  && index === 10) return { x: BS-CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
-  if (position === "top"    && index === 11) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
+  // ── Corners by id ──────────────────────────────────────────────────────
+  if (id === 0)  return { x: 0,       y: 0,       w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-left  START
+  if (id === 12) return { x: BS - CS, y: 0,       w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-right PRISON
+  if (id === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top"    }; // bot-right VACATION
+  if (id === 36) return { x: 0,       y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top"    }; // bot-left  GO-TO-PRISON
 
-  if (position === "bottom") {
-    return { x: CS + (index - 1) * TW, y: BS-CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
-  }
-  if (position === "right") {
-  const y = CS + (10 - index) * TW;
-  return { x: BS - CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
-}
+  // ── Top row: ids 1–11, left→right ──────────────────────────────────────
   if (position === "top") {
-    const x = BS - CS - (index + 1) * TW;
-    return { x, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
-  }
-  if (position === "left") {
-    return { x: 0, y: CS + index * TW, w: CS, h: TW, side: "left", textRot: 90, bandEdge: "right" };
+    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
   }
 
-  return { x: 0, y: 0, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
+  // ── Right col: ids 13–23, top→bottom ───────────────────────────────────
+  if (position === "right") {
+    return { x: BS - CS, y: CS + index * TW, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
+  }
+
+  // ── Bottom row: ids 25–35, right→left ──────────────────────────────────
+  if (position === "bottom") {
+    return { x: BS - CS - (index + 1) * TW, y: BS - CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
+  }
+
+  // ── Left col: ids 37–47, bottom→top ────────────────────────────────────
+  if (position === "left") {
+    return { x: 0, y: BS - CS - (index + 1) * TW, w: CS, h: TW, side: "left", textRot: 90, bandEdge: "right" };
+  }
+
+  return { x: 0, y: 0, w: TW, h: CS, side: "top", textRot: 0, bandEdge: "bottom" };
 }
 
 function getTokenCenter(tileId: number): [number, number] {
