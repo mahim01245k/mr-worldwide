@@ -216,23 +216,35 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
                 Instead use a clipped circle with image */}
             <clipPath id={`flag-clip-${tile.id}`}>
-              <circle cx={cx} cy={cy - vH * 0.15} r={12} />
+              <circle cx={cx} cy={cy - vH * 0.3} r={16} /> {/* Slightly larger radius */}
             </clipPath>
             <image
               href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
-              x={cx - 12} y={cy - vH * 0.15 - 12}
-              width={24} height={24}
+              x={cx - 16} y={cy - vH * 0.3 - 16} // Shifted higher by changing 0.15 to 0.3
+              width={32} height={32}             // Increased from 24 to 32
               clipPath={`url(#flag-clip-${tile.id})`}
               preserveAspectRatio="xMidYMid slice"
             />
-            <circle cx={cx} cy={cy - vH * 0.15} r={12}
+            <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
               fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
 
             {/* City name */}
-            <text x={cx} y={cy + vH * 0.1} textAnchor="middle" dominantBaseline="middle"
-              fontSize={vW > 60 ? 8.5 : 7.5} fill="#e8e4ff" fontWeight="700"
-              style={{ userSelect: "none" }}>
-              {tile.name.length > 9 ? tile.name.slice(0, 8) + "…" : tile.name}
+            <text
+              x={cx}
+              y={cy + vH * 0.1}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              // Dynamic font size: smaller for long names, larger for short names
+              fontSize={tile.name.length > 10 ? 6.5 : 8.5}
+              fill="#e8e4ff"
+              fontWeight="700"
+              style={{
+                userSelect: "none",
+                fontFamily: '"Yanone Kaffeesatz", Segoe UI, serif' // As requested previously
+              }}
+            >
+              {/* Remove the .slice() to show the full name */}
+              {tile.name}
             </text>
 
             {/* Price badge */}
@@ -444,7 +456,7 @@ export function GameBoard({
     return acc;
   }, {});
 
- return (
+  return (
     <div className="w-full h-full flex items-center justify-center overflow-hidden">
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
@@ -463,80 +475,81 @@ export function GameBoard({
           {/* Flag clip paths are defined inline per tile */}
         </defs>
 
-          {/* Board background */}
-          <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
+        {/* Board background */}
+        <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
 
-          {/* Inner center */}
-          <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#080616" rx={4} />
+        {/* Inner center */}
+        <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#080616" rx={4} />
 
-          {/* Center label */}
-          <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
-            fill="#2d2a4a" letterSpacing={5} fontWeight="700"
-            style={{ userSelect: "none" }}>
-            BOARD PREVIEW
-          </text>
-          <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
-            fill="#4c3a8a" fontWeight="900" letterSpacing={2}
-            style={{ userSelect: "none" }}>
-            Mr. Worldwide
-          </text>
-          <text x={BS / 2} y={BS / 2 - 32} textAnchor="middle" fontSize={48}
-            style={{ userSelect: "none" }}>
-            🌍
-          </text>
+        {/* Center label */}
+        <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
+          fill="#2d2a4a" letterSpacing={5} fontWeight="700"
+          style={{ userSelect: "none" }}>
+          BOARD PREVIEW
+        </text>
+        <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
+          fill="#4c3a8a" fontWeight="900" letterSpacing={2}
+          style={{ userSelect: "none" }}>
+          Mr. Worldwide
+        </text>
+        <text x={BS / 2} y={BS / 2 - 32} textAnchor="middle" fontSize={48}
+          style={{ userSelect: "none" }}>
+          🌍
+        </text>
 
-          {/* All tiles */}
-          {tiles.map(tile => (
-            <TileCard
-              key={tile.id}
-              tile={tile}
-              ownership={properties.find(p => p.tileId === tile.id)}
-              players={players}
-              isSelected={selectedTileId === tile.id}
-              onSelect={selectTile}
-            />
-          ))}
+        {/* All tiles */}
+        {tiles.map(tile => (
+          <TileCard
+            key={tile.id}
+            tile={tile}
+            ownership={properties.find(p => p.tileId === tile.id)}
+            players={players}
+            isSelected={selectedTileId === tile.id}
+            onSelect={selectTile}
+          />
+        ))}
 
-          {/* Player tokens */}
-          {Object.entries(byPos).map(([posStr, posPlayers]) => {
-            const pos = parseInt(posStr);
-            const [cx, cy] = getTokenCenter(pos);
-            return posPlayers.map((player, idx) => {
-              const total = posPlayers.length;
-              const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
-              return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} />;
-            });
-          })}
+        {/* Player tokens */}
+        {Object.entries(byPos).map(([posStr, posPlayers]) => {
+          const pos = parseInt(posStr);
+          const [cx, cy] = getTokenCenter(pos);
+          return posPlayers.map((player, idx) => {
+            const total = posPlayers.length;
+            const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
+            return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} />;
+          });
+        })}
 
-          {/* Current player pulse ring */}
-          {currentPlayer && !currentPlayer.isBankrupt && (() => {
-            const [cx, cy] = getTokenCenter(currentPlayer.position);
-            return (
-              <motion.circle cx={cx} cy={cy} r={15} fill="none"
-                stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2.5}
-                animate={{ r: [13, 19, 13], opacity: [0.2, 0.7, 0.2] }}
-                transition={{ duration: 1.5, repeat: Infinity }} />
-            );
-          })()}
+        {/* Current player pulse ring */}
+        {currentPlayer && !currentPlayer.isBankrupt && (() => {
+          const [cx, cy] = getTokenCenter(currentPlayer.position);
+          return (
+            <motion.circle cx={cx} cy={cy} r={15} fill="none"
+              stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2.5}
+              animate={{ r: [13, 19, 13], opacity: [0.2, 0.7, 0.2] }}
+              transition={{ duration: 1.5, repeat: Infinity }} />
+          );
+        })()}
 
-          {/* Dice + roll button in center */}
-          {onRoll && (
-            <CenterDice
-              values={diceValues}
-              rolling={rolling}
-              canRoll={canRoll}
-              isMyTurn={isMyTurn}
-              phase={phase}
-              onRoll={onRoll}
-            />
-          )}
+        {/* Dice + roll button in center */}
+        {onRoll && (
+          <CenterDice
+            values={diceValues}
+            rolling={rolling}
+            canRoll={canRoll}
+            isMyTurn={isMyTurn}
+            phase={phase}
+            onRoll={onRoll}
+          />
+        )}
 
-          {/* Buy panel overlay */}
-          {buyPanel && (
-            <foreignObject x={CS + 20} y={BS / 2 + 80} width={BS - CS * 2 - 40} height={120}>
-              <div>{buyPanel}</div>
-            </foreignObject>
-          )}
-        </svg>
-      </div>
-  );}
+        {/* Buy panel overlay */}
+        {buyPanel && (
+          <foreignObject x={CS + 20} y={BS / 2 + 80} width={BS - CS * 2 - 40} height={120}>
+            <div>{buyPanel}</div>
+          </foreignObject>
+        )}
+      </svg>
+    </div>
+  );
+}
