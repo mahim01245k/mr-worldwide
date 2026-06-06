@@ -122,7 +122,7 @@ const RAW_BOARD_TILES: BoardTile[] = [
   { id: 44, type: "property", name: "New York",    subname: "USA",      flagCode: "us", price: 400, baseRent: 50, rentLevels: [50,200,600,1400,1700,2000], color: "darkblue", group: "americas-premium", mortgageValue: 200, houseCost: 200, hotelCost: 200, position: "left",   index: 8  },
   { id: 45, type: "treasure", name: "Treasure",    subname: "Community",                                                                                    color: "none",                                                                                                  position: "left",   index: 9  },
   { id: 46, type: "utility",  name: "Water Works", subname: "Utility",  flagCode: "gb", price: 150,                                                         color: "none",                                                                                                  position: "left",   index: 10 },
-  { id: 47, type: "surprise", name: "Surprise", color: "none", position: "right", index: 10 },
+  { id: 47, type: "property", name: "Surprise",    subname: "UK",                                                                                    color: "none",                                                                                                  position: "right",  index: 0 },
 ];
 
 
