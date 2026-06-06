@@ -230,18 +230,19 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
           <g>
             {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
                 Instead use a clipped circle with image */}
-            <clipPath id={`flag-clip-${tile.id}`}>
-              <circle cx={cx} cy={cy - vH * 0.3} r={16} /> {/* Slightly larger radius */}
-            </clipPath>
-            <image
+                
+            {/* <clipPath id={`flag-clip-${tile.id}`}>
+              <circle cx={cx} cy={cy - vH * 0.3} r={16} /> 
+            </clipPath> */}
+            {/* <image
               href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
               x={cx - 16} y={cy - vH * 0.3 - 16} // Shifted higher by changing 0.15 to 0.3
               width={32} height={32}             // Increased from 24 to 32
               clipPath={`url(#flag-clip-${tile.id})`}
               preserveAspectRatio="xMidYMid slice"
-            />
-            <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
-              fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+            /> */}
+            {/* <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
+              fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} /> */}
 
             {/* City name */}
             <text
