@@ -1,18 +1,17 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/store/gameStore";
 import { useSocket } from "@/hooks/useSocket";
 import { GameBoard } from "@/components/board/GameBoard";
-import { TileDetail } from "@/components/board/TileDetail";
 import { Notifications } from "@/components/ui/Notifications";
 import { PLAYER_COLOR_HEX } from "@/types/game";
 import { BOARD_TILES } from "@/lib/game/boardData";
-import { Copy, Settings, Trophy, RotateCcw, Send, Home, Hotel, DollarSign } from "lucide-react";
+import { Copy, RotateCcw, Send, Home, Hotel, DollarSign, Trophy } from "lucide-react";
 import { useState, useRef } from "react";
 
-// ── Game Over Modal ─────────────────────────────────────────────────────────
+// ── Game Over Modal ──────────────────────────────────────────────────────────
 function GameOverModal() {
   const { gameState, myPlayerId } = useGameStore();
   const router = useRouter();
@@ -20,7 +19,6 @@ function GameOverModal() {
   const winner = gameState.players.find(p => p.id === gameState.winner);
   const isWinner = winner?.id === myPlayerId;
   const ranked = [...gameState.players].sort((a, b) => b.netWorth - a.netWorth);
-
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -32,7 +30,7 @@ function GameOverModal() {
         <div className="space-y-2 mb-6">
           {ranked.map((player, i) => (
             <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl ${i === 0 ? "bg-yellow-900/30 border border-yellow-700/40" : "bg-slate-800/60"}`}>
-              <span className="text-xl">{["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣"][i]}</span>
+              <span className="text-xl">{["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"][i]}</span>
               <span className="text-lg">{player.avatar}</span>
               <span className="text-white font-bold flex-1 text-left">{player.name}</span>
               <span className="text-yellow-400 font-bold">${player.netWorth.toLocaleString()}</span>
@@ -40,7 +38,7 @@ function GameOverModal() {
           ))}
         </div>
         <button onClick={() => router.push("/lobby")}
-          className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3.5 rounded-xl transition-all">
+          className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-bold py-3.5 rounded-xl">
           <RotateCcw size={16} /> Play Again
         </button>
       </motion.div>
@@ -48,40 +46,92 @@ function GameOverModal() {
   );
 }
 
-// ── Main Game Page ──────────────────────────────────────────────────────────
+// ── Activity Log with rich entries ──────────────────────────────────────────
+const LOG_ICONS: Record<string, string> = {
+  move: "🚀", purchase: "🏙️", rent: "💸", tax: "🏛️",
+  card: "🎴", trade: "🤝", upgrade: "🏗️", jail: "🔒",
+  bankrupt: "💀", system: "⚙️",
+};
+const LOG_COLORS: Record<string, string> = {
+  move: "#60a5fa", purchase: "#34d399", rent: "#f87171", tax: "#fb923c",
+  card: "#a78bfa", trade: "#22d3ee", upgrade: "#fbbf24", jail: "#94a3b8",
+  bankrupt: "#f43f5e", system: "#64748b",
+};
+
+function ActivityLog() {
+  const { gameState } = useGameStore();
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const logs = gameState?.log ?? [];
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs.length]);
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2 flex-shrink-0">
+        Activity
+      </span>
+      <div className="flex-1 overflow-y-auto space-y-0.5 min-h-0">
+        <AnimatePresence initial={false}>
+          {logs.slice(-60).map(log => (
+            <motion.div key={log.id}
+              initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+              className="flex items-start gap-1.5 text-xs py-1 border-b border-white/5">
+              <span className="flex-shrink-0 mt-0.5">{LOG_ICONS[log.type] ?? "•"}</span>
+              <p className="leading-relaxed" style={{ color: LOG_COLORS[log.type] ?? "#94a3b8" }}>
+                {log.message}
+              </p>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {logs.length === 0 && (
+          <p className="text-slate-600 text-xs text-center mt-4">Game not started yet…</p>
+        )}
+        <div ref={bottomRef} />
+      </div>
+    </div>
+  );
+}
+
+// ── Main Game Page ───────────────────────────────────────────────────────────
 export default function GamePage() {
-  const { gameState, myPlayerId, roomCode, isConnected, selectedTileId } = useGameStore();
-  const { rollDice, buyProperty, declinePurchase, auctionBid, processCard,
-    useJailCard, payJailFine, respondTrade, sendChat, buildHouse, buildHotel,
-    mortgageProperty, proposeTrade } = useSocket();
+  const { gameState, myPlayerId, roomCode, isConnected } = useGameStore();
+  const {
+    rollDice, buyProperty, declinePurchase, auctionBid, processCard,
+    useJailCard, payJailFine, respondTrade, sendChat,
+    buildHouse, buildHotel, mortgageProperty, proposeTrade,
+  } = useSocket();
   const router = useRouter();
-  const [chatInput, setChatInput] = useState("");
-  const [bidAmount, setBidAmount] = useState(10);
-  const [rolling, setRolling] = useState(false);
-  const [copied, setCopied] = useState(false);
+
+  const [chatInput, setChatInput]     = useState("");
+  const [bidAmount, setBidAmount]     = useState(10);
+  const [rolling, setRolling]         = useState(false);
+  const [copied, setCopied]           = useState(false);
   const [showTradeForm, setShowTradeForm] = useState(false);
   const [tradeTarget, setTradeTarget] = useState("");
-  const [tradeCash, setTradeCash] = useState(0);
-  const [tradeFromProps, setTradeFromProps] = useState<number[]>([]);
-  const [tradeToProps, setTradeToProps] = useState<number[]>([]);
+  const [tradeCash, setTradeCash]     = useState(0);
   const chatBottomRef = useRef<HTMLDivElement>(null);
-  const logBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (!gameState) router.push("/lobby"); }, [gameState, router]);
-  useEffect(() => { chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [gameState?.chat?.length]);
-  useEffect(() => { logBottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [gameState?.log?.length]);
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [gameState?.chat?.length]);
 
   if (!gameState) return (
     <div className="min-h-screen bg-[#12102a] flex items-center justify-center">
-      <div className="text-white text-center"><div className="text-4xl mb-4 animate-spin">🌍</div><p>Loading...</p></div>
+      <div className="text-white text-center">
+        <div className="text-4xl mb-4 animate-spin">🌍</div>
+        <p>Loading...</p>
+      </div>
     </div>
   );
 
-  const myPlayer = gameState.players.find(p => p.id === myPlayerId);
-  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-  const isMyTurn = currentPlayer?.id === myPlayerId;
-  const canRoll = isMyTurn && gameState.phase === "rolling";
-  const myProps = gameState.properties.filter(p => p.ownerId === myPlayerId);
+  const myPlayer       = gameState.players.find(p => p.id === myPlayerId);
+  const currentPlayer  = gameState.players[gameState.currentPlayerIndex];
+  const isMyTurn       = currentPlayer?.id === myPlayerId;
+  const canRoll        = isMyTurn && gameState.phase === "rolling";
+  const myProps        = gameState.properties.filter(p => p.ownerId === myPlayerId);
 
   const handleRoll = () => {
     if (!canRoll || rolling) return;
@@ -91,7 +141,11 @@ export default function GamePage() {
   };
 
   const handleCopy = () => {
-    if (roomCode) { navigator.clipboard.writeText(roomCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    if (roomCode) {
+      navigator.clipboard.writeText(roomCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleChat = (e: React.FormEvent) => {
@@ -99,53 +153,131 @@ export default function GamePage() {
     if (chatInput.trim()) { sendChat(chatInput.trim()); setChatInput(""); }
   };
 
-  const handleTrade = () => {
-    if (!tradeTarget) return;
-    proposeTrade({ toPlayerId: tradeTarget, fromCash: tradeCash, toCash: 0, fromProperties: tradeFromProps, toProperties: tradeToProps, fromJailCards: 0, toJailCards: 0 });
-    setShowTradeForm(false);
-  };
-
-  // Current tile for buying panel
+  // Buy panel rendered INSIDE the SVG board (no bottom bar)
   const myPosition = myPlayer?.position ?? 0;
-  const myTile = BOARD_TILES.find(t => t.id === myPosition);
-  const selectedTile = selectedTileId !== null ? BOARD_TILES.find(t => t.id === selectedTileId) : null;
+  const myTile     = BOARD_TILES.find(t => t.id === myPosition);
 
   const buyPanel = gameState.phase === "buying" && isMyTurn && myTile ? (
-    <motion.div key="buy-overlay" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-      className="bg-[#0f0d20] border border-white/10 rounded-xl p-4 w-full">
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-3xl">{myTile.flagCode || "🏙️"}</span>
+    <div className="bg-[#0f0d20]/95 border border-white/15 rounded-xl p-3 w-full backdrop-blur-sm">
+      <div className="flex items-center gap-2 mb-2">
+        {myTile.flagCode
+          ? <img src={`https://flagcdn.com/w40/${myTile.flagCode}.png`} alt="" className="w-7 h-7 rounded-full object-cover border border-white/20" />
+          : <span className="text-2xl">🏙️</span>
+        }
         <div>
-          <p className="text-white font-bold">{myTile.name}</p>
-          <p className="text-slate-400 text-xs">{myTile.subname} • ${myTile.price}</p>
+          <p className="text-white font-bold text-sm leading-none">{myTile.name}</p>
+          <p className="text-slate-400 text-xs">{myTile.subname} · ${myTile.price}</p>
         </div>
       </div>
       <div className="flex gap-2">
-        <button onClick={() => buyProperty()} disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
-          className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold py-2 rounded-lg text-sm">
-          Buy for ${myTile.price}
+        <button onClick={() => buyProperty()}
+          disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
+          className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold py-1.5 rounded-lg text-xs">
+          Buy ${myTile.price}
         </button>
         <button onClick={() => declinePurchase()}
-          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm">
+          className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-1.5 rounded-lg text-xs">
           Auction 🔨
         </button>
       </div>
-    </motion.div>
+    </div>
   ) : null;
+
+  // Auction — also inline in board space if needed, but we log and show a minimal
+  // non-layout-breaking overlay inside the board SVG foreignObject
+  const auctionPanel = gameState.phase === "auction" && gameState.currentAuction ? (
+    <div className="bg-amber-950/90 border border-amber-700/50 rounded-xl p-3 w-full backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-amber-400 font-bold text-xs">
+          🔨 {BOARD_TILES.find(t => t.id === gameState.currentAuction!.tileId)?.name}
+        </span>
+        <span className="text-white font-bold text-sm">${gameState.currentAuction.currentBid}</span>
+      </div>
+      <div className="flex gap-2">
+        <input type="number" value={bidAmount}
+          min={gameState.currentAuction.currentBid + 10} step={10}
+          onChange={e => setBidAmount(parseInt(e.target.value))}
+          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white text-xs" />
+        <button onClick={() => auctionBid(bidAmount)}
+          disabled={(myPlayer?.cash ?? 0) < bidAmount}
+          className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold px-3 rounded-lg text-xs">
+          Bid
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  // Card — just needs an OK button (text is already in activity log)
+  const cardPanel = gameState.phase === "card" && gameState.currentCard && isMyTurn ? (
+    <div className="bg-[#0f0d20]/95 border border-violet-700/40 rounded-xl p-3 w-full text-center backdrop-blur-sm">
+      <p className="text-slate-300 text-xs mb-2">{gameState.currentCard.card.text}</p>
+      <button onClick={() => processCard()}
+        className="bg-violet-600 hover:bg-violet-500 text-white font-bold py-1.5 px-6 rounded-lg text-xs">
+        OK, Got it!
+      </button>
+    </div>
+  ) : null;
+
+  // Jail options
+  const jailPanel = myPlayer?.inJail && isMyTurn && gameState.phase === "rolling" ? (
+    <div className="bg-[#0f0d20]/95 border border-slate-700/50 rounded-xl p-3 w-full backdrop-blur-sm">
+      <p className="text-white font-bold text-xs text-center mb-2">
+        🔒 Jail — Turn {myPlayer.jailTurns}/3
+      </p>
+      <div className="flex gap-2">
+        {myPlayer.jailFreeCards > 0 && (
+          <button onClick={() => useJailCard()}
+            className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1.5 rounded-lg text-xs">
+            Use Card 🎫
+          </button>
+        )}
+        {myPlayer.cash >= 50 && (
+          <button onClick={() => payJailFine()}
+            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-1.5 rounded-lg text-xs">
+            Pay $50
+          </button>
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  // Trade response
+  const tradePanel = gameState.phase === "trading" && gameState.pendingTrade
+    && gameState.pendingTrade.toPlayerId === myPlayerId ? (
+    <div className="bg-[#0f0d20]/95 border border-blue-700/40 rounded-xl p-3 w-full backdrop-blur-sm">
+      <p className="text-blue-400 font-bold text-xs mb-2">
+        🤝 Trade from {gameState.players.find(p => p.id === gameState.pendingTrade?.fromPlayerId)?.name}
+      </p>
+      <div className="flex gap-2">
+        <button onClick={() => respondTrade(true)}
+          className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-1.5 rounded-lg text-xs">
+          Accept ✓
+        </button>
+        <button onClick={() => respondTrade(false)}
+          className="flex-1 bg-red-700 hover:bg-red-600 text-white font-bold py-1.5 rounded-lg text-xs">
+          Decline ✗
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  // Pick whichever action panel is active — passed into board SVG foreignObject
+  const activePanel = buyPanel ?? auctionPanel ?? cardPanel ?? jailPanel ?? tradePanel ?? null;
 
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{ background: "#12102a" }}>
       <Notifications />
       <GameOverModal />
 
-      {/* ── 3-COLUMN MAIN LAYOUT ── */}
+      {/* ── 3-COLUMN LAYOUT fills entire viewport height ── */}
       <div className="flex flex-1 min-h-0">
 
-        {/* ── LEFT SIDEBAR (Brand, Link, Chat, Activity) ── */}
-        <div className="w-72 flex flex-col border-r border-white/10 min-h-0" style={{ background: "#15132a" }}>
+        {/* ── LEFT SIDEBAR ── */}
+        <div className="w-72 flex flex-col border-r border-white/10 min-h-0 flex-shrink-0"
+          style={{ background: "#15132a" }}>
 
-          {/* Brand & Share Link */}
-          <div className="p-4 border-b border-white/10" style={{ background: "#1a1730" }}>
+          {/* Brand & share */}
+          <div className="p-4 border-b border-white/10 flex-shrink-0" style={{ background: "#1a1730" }}>
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl font-black text-white tracking-tight">
                 MR.<span className="text-violet-400">WORLDWIDE</span>
@@ -164,24 +296,24 @@ export default function GamePage() {
             </div>
           </div>
 
-          {/* Chat */}
+          {/* Chat — grows to fill */}
           <div className="flex-1 flex flex-col min-h-0 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-bold text-sm">Chat</span>
-            </div>
+            <span className="text-white font-bold text-sm mb-2 flex-shrink-0">Chat</span>
             <div className="flex-1 overflow-y-auto space-y-1 min-h-0 mb-2">
               {gameState.chat.length === 0 && (
                 <p className="text-slate-600 text-xs text-center pt-4">No messages yet</p>
               )}
               {gameState.chat.map(msg => (
                 <div key={msg.id} className="text-xs">
-                  <span className="font-bold mr-1" style={{ color: PLAYER_COLOR_HEX[msg.playerColor] }}>{msg.playerName}:</span>
+                  <span className="font-bold mr-1" style={{ color: PLAYER_COLOR_HEX[msg.playerColor] }}>
+                    {msg.playerName}:
+                  </span>
                   <span className="text-slate-300">{msg.message}</span>
                 </div>
               ))}
               <div ref={chatBottomRef} />
             </div>
-            <form onSubmit={handleChat} className="flex gap-2">
+            <form onSubmit={handleChat} className="flex gap-2 flex-shrink-0">
               <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                 placeholder="Say something..." maxLength={200}
                 className="flex-1 bg-[#0f0d20] border border-white/10 rounded-lg px-3 py-2 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50" />
@@ -192,144 +324,62 @@ export default function GamePage() {
             </form>
           </div>
 
-          {/* Activity Log */}
-          <div className="h-48 border-t border-white/10 p-3 flex flex-col min-h-0" style={{ background: "#0f0d20" }}>
-            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Activity</span>
-            <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-              {gameState.log.slice(-30).map(entry => (
-                <div key={entry.id} className="text-xs text-slate-400 leading-relaxed border-b border-white/5 pb-1">
-                  {entry.message}
-                </div>
-              ))}
-              <div ref={logBottomRef} />
-            </div>
+          {/* Activity log — fixed height at bottom */}
+          <div className="h-52 border-t border-white/10 p-3 flex flex-col min-h-0 flex-shrink-0"
+            style={{ background: "#0f0d20" }}>
+            <ActivityLog />
           </div>
         </div>
 
-        {/* ── CENTER: BOARD ── */}
+        {/* ── CENTER: BOARD ONLY — no bottom bar ── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
 
-          {/* Turn Indicator (Floating Center) */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-[#1a1730]/90 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-full shadow-xl">
+          {/* Floating turn indicator */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-[#1a1730]/90 backdrop-blur-md border border-white/10 px-5 py-2 rounded-full shadow-xl pointer-events-none">
             {currentPlayer && (
               <div className="flex items-center gap-2">
-                <span className="text-lg" style={{ color: PLAYER_COLOR_HEX[currentPlayer.color] }}>{currentPlayer.avatar}</span>
-                <span className="text-white text-sm font-bold">{isMyTurn ? "Your turn!" : `${currentPlayer.name} is playing...`}</span>
+                <span className="text-base" style={{ color: PLAYER_COLOR_HEX[currentPlayer.color] }}>
+                  {currentPlayer.avatar}
+                </span>
+                <span className="text-white text-sm font-bold">
+                  {isMyTurn ? "Your turn!" : `${currentPlayer.name} is playing...`}
+                </span>
               </div>
             )}
-            <div className="w-px h-4 bg-white/20 mx-2" />
-            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Round {gameState.round}/{gameState.maxRounds}</span>
+            <div className="w-px h-4 bg-white/20 mx-1" />
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+              Round {gameState.round}/{gameState.maxRounds}
+            </span>
           </div>
 
-          {/* Board area */}
-          <div className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden">
-            {/* The aspect-square container forces the height to match the width exactly */}
-            <div className="w-full max-w-[85vh] aspect-square">
+          {/* Board fills ALL remaining height — no bottom bar */}
+          <div className="flex-1 w-full flex items-center justify-center min-h-0 p-2">
+            <div className="w-full h-full max-w-[min(100%,calc(100vh-2rem))] max-h-[min(100%,calc(100vw-36rem))] aspect-square">
               <GameBoard
                 onRoll={handleRoll}
                 canRoll={canRoll}
                 rolling={rolling}
                 isMyTurn={isMyTurn}
                 phase={gameState.phase}
-                buyPanel={buyPanel}
+                buyPanel={activePanel}
               />
-            </div>
-          </div>
-
-          {/* Bottom controls */}
-          <div className="border-t border-white/10 p-4" style={{ background: "#15132a" }}>
-            <div className="flex items-start gap-6 max-w-3xl mx-auto">
-              <div className="flex-1">
-                <AnimatePresence mode="wait">
-                  {/* AUCTION */}
-                  {gameState.phase === "auction" && gameState.currentAuction && (
-                    <motion.div key="auction" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-amber-950/40 border border-amber-700/40 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-amber-400 font-bold text-sm">🔨 Auction: {BOARD_TILES.find(t => t.id === gameState.currentAuction!.tileId)?.name}</span>
-                        <span className="text-white font-bold">${gameState.currentAuction.currentBid}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <input type="number" value={bidAmount} min={gameState.currentAuction.currentBid + 10} step={10}
-                          onChange={e => setBidAmount(parseInt(e.target.value))}
-                          className="flex-1 bg-[#0f0d20] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm" />
-                        <button onClick={() => auctionBid(bidAmount)} disabled={(myPlayer?.cash ?? 0) < bidAmount}
-                          className="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold px-4 rounded-lg text-sm">
-                          Bid
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* CARD */}
-                  {gameState.phase === "card" && gameState.currentCard && (
-                    <motion.div key="card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className={`border rounded-xl p-4 ${gameState.currentCard.type === "treasure" ? "bg-amber-950/30 border-amber-700/40" : "bg-purple-950/30 border-purple-700/40"}`}>
-                      <div className="text-3xl mb-2 text-center">{gameState.currentCard.type === "treasure" ? "💰" : "🎴"}</div>
-                      <p className="text-white text-sm text-center mb-3">{gameState.currentCard.card.text}</p>
-                      {isMyTurn && (
-                        <button onClick={() => processCard()}
-                          className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 rounded-lg text-sm">
-                          OK, Got it!
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* JAIL */}
-                  {myPlayer?.inJail && isMyTurn && gameState.phase === "rolling" && (
-                    <motion.div key="jail" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4">
-                      <p className="text-white font-bold text-center mb-3">🔒 You're in Jail! (Turn {myPlayer.jailTurns}/3)</p>
-                      <div className="flex gap-2">
-                        {myPlayer.jailFreeCards > 0 && (
-                          <button onClick={() => useJailCard()} className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 rounded-lg text-sm">
-                            Use Free Card 🎫
-                          </button>
-                        )}
-                        {myPlayer.cash >= 50 && (
-                          <button onClick={() => payJailFine()} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg text-sm">
-                            Pay $50
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* TRADE */}
-                  {gameState.phase === "trading" && gameState.pendingTrade && (
-                    <motion.div key="trade" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="bg-blue-950/30 border border-blue-700/40 rounded-xl p-4">
-                      {gameState.pendingTrade.toPlayerId === myPlayerId ? (
-                        <>
-                          <p className="text-blue-400 font-bold text-sm mb-2">🤝 Trade offer from {gameState.players.find(p => p.id === gameState.pendingTrade?.fromPlayerId)?.name}</p>
-                          <div className="flex gap-2">
-                            <button onClick={() => respondTrade(true)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg text-sm">Accept ✓</button>
-                            <button onClick={() => respondTrade(false)} className="flex-1 bg-red-700 hover:bg-red-600 text-white font-bold py-2 rounded-lg text-sm">Decline ✗</button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-slate-400 text-sm text-center">Waiting for trade response...</p>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT SIDEBAR (Players, Trades, Properties) ── */}
-        <div className="w-72 flex flex-col border-l border-white/10 min-h-0" style={{ background: "#15132a" }}>
+        {/* ── RIGHT SIDEBAR ── */}
+        <div className="w-72 flex flex-col border-l border-white/10 min-h-0 flex-shrink-0"
+          style={{ background: "#15132a" }}>
 
-          {/* Players list */}
-          <div className="p-3 border-b border-white/10">
+          {/* Players */}
+          <div className="p-3 border-b border-white/10 flex-shrink-0">
             <div className="space-y-1.5">
               {gameState.players.map(player => {
                 const color = PLAYER_COLOR_HEX[player.color];
                 const isCurrent = player.id === currentPlayer?.id;
                 return (
-                  <div key={player.id} className={`flex items-center gap-2 p-2 rounded-xl transition-all ${isCurrent ? "border" : "border border-transparent"}`}
+                  <div key={player.id}
+                    className={`flex items-center gap-2 p-2 rounded-xl transition-all border ${isCurrent ? "" : "border-transparent"}`}
                     style={isCurrent ? { borderColor: `${color}50`, background: `${color}10` } : {}}>
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-base border-2 flex-shrink-0"
                       style={{ borderColor: color, background: `${color}20` }}>
@@ -353,7 +403,7 @@ export default function GamePage() {
           </div>
 
           {/* Votekick / Bankrupt */}
-          <div className="px-3 py-2 border-b border-white/10 flex gap-2">
+          <div className="px-3 py-2 border-b border-white/10 flex gap-2 flex-shrink-0">
             <button className="flex-1 text-xs bg-slate-800/60 hover:bg-slate-700 text-slate-300 rounded-lg py-1.5 transition-colors">
               Votekick
             </button>
@@ -362,8 +412,8 @@ export default function GamePage() {
             </button>
           </div>
 
-          {/* Trades section */}
-          <div className="p-3 border-b border-white/10">
+          {/* Trades */}
+          <div className="p-3 border-b border-white/10 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-white font-bold text-sm">Trades</span>
               <button onClick={() => setShowTradeForm(!showTradeForm)}
@@ -384,9 +434,15 @@ export default function GamePage() {
                       ))}
                     </select>
                     <input type="number" value={tradeCash} onChange={e => setTradeCash(parseInt(e.target.value) || 0)}
-                      placeholder="Offer cash amount" min={0}
+                      placeholder="Offer cash" min={0}
                       className="w-full bg-[#0f0d20] border border-white/10 rounded-lg px-2 py-1.5 text-white text-xs" />
-                    <button onClick={handleTrade} disabled={!tradeTarget}
+                    <button
+                      onClick={() => {
+                        if (!tradeTarget) return;
+                        proposeTrade({ toPlayerId: tradeTarget, fromCash: tradeCash, toCash: 0, fromProperties: [], toProperties: [], fromJailCards: 0, toJailCards: 0 });
+                        setShowTradeForm(false);
+                      }}
+                      disabled={!tradeTarget}
                       className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold py-1.5 rounded-lg text-xs">
                       Send Offer 🤝
                     </button>
@@ -398,7 +454,9 @@ export default function GamePage() {
 
           {/* My Properties */}
           <div className="flex-1 overflow-y-auto p-3 min-h-0">
-            <p className="text-white font-bold text-sm mb-2">My properties ({myProps.length})</p>
+            <p className="text-white font-bold text-sm mb-2 flex-shrink-0">
+              My properties ({myProps.length})
+            </p>
             {myProps.length === 0 && (
               <p className="text-slate-600 text-xs text-center py-2">No properties yet</p>
             )}
@@ -409,28 +467,38 @@ export default function GamePage() {
                 return (
                   <div key={tile.id} className="bg-[#0f0d20] border border-white/10 rounded-xl p-2">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-base">{tile.flagCode || "🏙️"}</span>
+                      {tile.flagCode
+                        ? <img src={`https://flagcdn.com/w40/${tile.flagCode}.png`} alt="" className="w-6 h-6 rounded-full object-cover border border-white/20 flex-shrink-0" />
+                        : <span className="text-base">🏙️</span>
+                      }
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-xs font-bold truncate">{tile.name}</p>
-                        <p className="text-slate-500 text-xs">{ownership.hasHotel ? "🏨 Hotel" : ownership.houses > 0 ? `${"🏠".repeat(ownership.houses)}` : "No buildings"}</p>
+                        <p className="text-slate-500 text-xs">
+                          {ownership.hasHotel ? "🏨 Hotel"
+                            : ownership.houses > 0 ? "🏠".repeat(ownership.houses)
+                            : "No buildings"}
+                        </p>
                       </div>
                       {ownership.isMortgaged && <span className="text-red-400 text-xs">M</span>}
                     </div>
                     <div className="flex gap-1">
                       {!ownership.isMortgaged && !ownership.hasHotel && ownership.houses < 4 && tile.houseCost && (
-                        <button onClick={() => buildHouse(tile.id)} disabled={(myPlayer?.cash ?? 0) < tile.houseCost}
-                          className="flex-1 flex items-center justify-center gap-0.5 bg-green-900/40 hover:bg-green-900/60 disabled:opacity-30 text-green-400 border border-green-700/30 rounded py-1 text-xs transition-all">
+                        <button onClick={() => buildHouse(tile.id)}
+                          disabled={(myPlayer?.cash ?? 0) < tile.houseCost}
+                          className="flex-1 flex items-center justify-center gap-0.5 bg-green-900/40 hover:bg-green-900/60 disabled:opacity-30 text-green-400 border border-green-700/30 rounded py-1 text-xs">
                           <Home size={8} /> ${tile.houseCost}
                         </button>
                       )}
                       {!ownership.isMortgaged && !ownership.hasHotel && ownership.houses === 4 && tile.hotelCost && (
-                        <button onClick={() => buildHotel(tile.id)} disabled={(myPlayer?.cash ?? 0) < tile.hotelCost}
-                          className="flex-1 flex items-center justify-center gap-0.5 bg-red-900/40 hover:bg-red-900/60 disabled:opacity-30 text-red-400 border border-red-700/30 rounded py-1 text-xs transition-all">
+                        <button onClick={() => buildHotel(tile.id)}
+                          disabled={(myPlayer?.cash ?? 0) < tile.hotelCost}
+                          className="flex-1 flex items-center justify-center gap-0.5 bg-red-900/40 hover:bg-red-900/60 disabled:opacity-30 text-red-400 border border-red-700/30 rounded py-1 text-xs">
                           <Hotel size={8} /> ${tile.hotelCost}
                         </button>
                       )}
-                      <button onClick={() => mortgageProperty(tile.id)} disabled={ownership.isMortgaged}
-                        className="flex-1 flex items-center justify-center gap-0.5 bg-slate-800/60 hover:bg-slate-700 disabled:opacity-30 text-slate-400 border border-slate-700/30 rounded py-1 text-xs transition-all">
+                      <button onClick={() => mortgageProperty(tile.id)}
+                        disabled={ownership.isMortgaged}
+                        className="flex-1 flex items-center justify-center gap-0.5 bg-slate-800/60 hover:bg-slate-700 disabled:opacity-30 text-slate-400 border border-slate-700/30 rounded py-1 text-xs">
                         <DollarSign size={8} /> {ownership.isMortgaged ? "Mortgaged" : "Mortgage"}
                       </button>
                     </div>
