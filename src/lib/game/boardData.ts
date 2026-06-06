@@ -170,19 +170,18 @@ export function getCornerTiles(): BoardTile[] {
 }
 // The exact clockwise sequence of your original IDs starting from Top-Left
 const CLOCKWISE_ORDER = [
-  // Top edge
-  34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 
-  
-  // Right edge (Ensure this has exactly 11 IDs)
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-  
-  // Bottom edge
-  12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 
-  
-  // Left edge
-  23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 
-];
+  // Top edge: left → right (START first, then across)
+  34, 35, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,
 
+  // Right corner + down right edge
+  23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 47,
+
+  // Bottom-right corner + bottom edge right → left
+  12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+
+  // Bottom-left corner + up left edge
+  0, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+];
 // Auto-remap the IDs to 0-46 and export it as the official BOARD_TILES
 export const BOARD_TILES: BoardTile[] = RAW_BOARD_TILES.map(tile => ({
   ...tile,
