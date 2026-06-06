@@ -87,12 +87,11 @@ function getFlagCenter(tile: BoardTile): [number, number] | null {
   if (!tile.flagCode) return null;
   const { x, y, w, h, side } = getTileLayout(tile);
   if (side === "corner") return null;
-  switch (side) {
-    case "top":    return [x + w / 2, y + h];
-    case "right":  return [x,         y + h / 2];
-    case "bottom": return [x + w / 2, y];
-    case "left":   return [x + w,     y + h / 2];
-  }
+  if (side === "top")    return [x + w / 2, y + h];
+  if (side === "right")  return [x,         y + h / 2];
+  if (side === "bottom") return [x + w / 2, y];
+  if (side === "left")   return [x + w,     y + h / 2];
+  return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
 function TileCard({ tile, ownership, players, isSelected, onSelect }: {
@@ -340,11 +339,7 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   return (
     <>
       <defs>
-        {tiles.filter(t => t.flagCode).map(tile => (
-          <clipPath key={`fc-${tile.id}`} id={`fc-${tile.id}`}>
-            <circle cx={0} cy={0} r={13} />
-          </clipPath>
-        ))}
+        
       </defs>
       {tiles.filter(t => t.flagCode).map(tile => {
         const center = getFlagCenter(tile);
