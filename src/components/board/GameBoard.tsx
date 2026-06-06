@@ -64,7 +64,12 @@ function getTileLayout(tile: BoardTile): {
 
   // 8. Left Edge (Bottom to Top)
   if (i > 36) {
-    const leftTW = (BS - CS * 2) / 10;
+    // Change the denominator to match your actual number of tiles.
+    // If you currently have 10 tiles, keep it as 10.
+    // If you add an 11th tile, change this to 11.
+    const leftTW = (BS - CS * 2) / 11; 
+    
+    // index is used for positioning; ensure it ranges 0-9
     const y = BS - CS - (i - 36) * leftTW;
     return { x: 0, y, w: CS, h: leftTW, side: "left", textRot: 90, bandEdge: "right" };
   }
@@ -78,7 +83,17 @@ function getTokenCenter(tileId: number): [number, number] {
   const { x, y, w, h } = getTileLayout(tile);
   return [x + w / 2, y + h / 2];
 }
-
+function getFlagCenter(tile: BoardTile): [number, number] | null {
+  if (!tile.flagCode) return null;
+  const { x, y, w, h, side } = getTileLayout(tile);
+  if (side === "corner") return null;
+  switch (side) {
+    case "top":    return [x + w / 2, y + h];
+    case "right":  return [x,         y + h / 2];
+    case "bottom": return [x + w / 2, y];
+    case "left":   return [x + w,     y + h / 2];
+  }
+}
 // ── Tile renderer ────────────────────────────────────────────────────────────
 function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   tile: BoardTile;
@@ -320,7 +335,36 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
     </g>
   );
 }
-
+function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
+  return (
+    <>
+      <defs>
+        {tiles.filter(t => t.flagCode).map(tile => (
+          <clipPath key={`fc-${tile.id}`} id={`fc-${tile.id}`}>
+            <circle cx={0} cy={0} r={13} />
+          </clipPath>
+        ))}
+      </defs>
+      {tiles.filter(t => t.flagCode).map(tile => {
+        const center = getFlagCenter(tile);
+        if (!center) return null;
+        const [fx, fy] = center;
+        return (
+          <g key={`flag-${tile.id}`} transform={`translate(${fx},${fy})`} style={{ pointerEvents: "none" }}>
+            <circle cx={0} cy={1} r={14} fill="rgba(0,0,0,0.5)" />
+            <image
+              href={`https://flagcdn.com/w40/${tile.flagCode!.toLowerCase()}.png`}
+              x={-13} y={-13} width={26} height={26}
+              clipPath={`url(#fc-${tile.id})`}
+              preserveAspectRatio="xMidYMid slice"
+            />
+            <circle cx={0} cy={0} r={13} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={1.5} />
+          </g>
+        );
+      })}
+    </>
+  );
+}
 // ── Player token ─────────────────────────────────────────────────────────────
 function PlayerToken({ player, cx, cy, ox }: {
   player: Player; cx: number; cy: number; ox: number;
@@ -507,8 +551,9 @@ export function GameBoard({
             isSelected={selectedTileId === tile.id}
             onSelect={selectTile}
           />
+          
         ))}
-
+<FlagLayer tiles={tiles} />
         {/* Player tokens */}
         {Object.entries(byPos).map(([posStr, posPlayers]) => {
           const pos = parseInt(posStr);

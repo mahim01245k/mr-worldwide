@@ -99,6 +99,7 @@ const RAW_BOARD_TILES: BoardTile[] = [
   // ── TOP ROW — right to left, indices 0..10 ───────────────────────────────
   { id: 24, type: "property", name: "Berlin",      subname: "Germany",  flagCode: "de", price: 200, baseRent: 16, rentLevels: [16,80,220,600,800,1000],   color: "green",    group: "europe-central",   mortgageValue: 100, houseCost: 150, hotelCost: 150, position: "top",    index: 0  },
   { id: 25, type: "property", name: "New Delhi",   subname: "India",    flagCode: "in", price: 120, baseRent: 8,  rentLevels: [8,40,100,300,450,600],     color: "yellow",   group: "asia-south",       mortgageValue: 60,  houseCost: 50,  hotelCost: 50,  position: "top",    index: 1  },
+  
   { id: 26, type: "surprise", name: "Surprise",                                                                                                             color: "none",                                                                                                  position: "top",    index: 2  },
   { id: 27, type: "property", name: "Mumbai",      subname: "India",    flagCode: "in", price: 120, baseRent: 8,  rentLevels: [8,40,100,300,450,600],     color: "yellow",   group: "asia-south",       mortgageValue: 60,  houseCost: 50,  hotelCost: 50,  position: "top",    index: 3  },
   { id: 28, type: "tax",      name: "Earnings Tax",subname: "Pay 10%",                               taxAmount: 0.1,                                        color: "none",                                                                                                  position: "top",    index: 4  },
@@ -168,10 +169,17 @@ export function getCornerTiles(): BoardTile[] {
 }
 // The exact clockwise sequence of your original IDs starting from Top-Left
 const CLOCKWISE_ORDER = [
-  34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, // Top edge
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,               // Right edge
-  12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,         // Bottom edge
-  23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33          // Left edge
+  // Top edge
+  34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 
+  
+  // Right edge (Ensure this has exactly 11 IDs)
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
+  
+  // Bottom edge
+  12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 
+  
+  // Left edge
+  23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 
 ];
 
 // Auto-remap the IDs to 0-46 and export it as the official BOARD_TILES
