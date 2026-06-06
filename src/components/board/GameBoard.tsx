@@ -30,48 +30,26 @@ function getTileLayout(tile: BoardTile): {
   side: "bottom" | "right" | "top" | "left" | "corner";
   textRot: number; bandEdge: "top" | "bottom" | "left" | "right";
 } {
-  const i = tile.id;
+ const { position, index } = tile;
 
-  // 1. Top-Left Corner (START)
-  if (i === 0) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
+  if (position === "bottom" && index === 0)  return { x: 0, y: BS-CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
+  if (position === "bottom" && index === 12) return { x: BS-CS, y: BS-CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
+  if (position === "right"  && index === 10) return { x: BS-CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
+  if (position === "top"    && index === 11) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
 
-  // 2. Top Edge (Left to Right)
-  if (i > 0 && i < 12) {
-    const x = CS + (i - 1) * TW;
+  if (position === "bottom") {
+    return { x: CS + (index - 1) * TW, y: BS-CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
+  }
+  if (position === "right") {
+    const y = CS + (9 - index) * TW;
+    return { x: BS-CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
+  }
+  if (position === "top") {
+    const x = BS - CS - (index + 1) * TW;
     return { x, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
   }
-
-  // 3. Top-Right Corner
-  if (i === 12) return { x: BS - CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" };
-
-  // 4. Right Edge (Top to Bottom)
-  if (i > 12 && i < 24) {
-    const y = CS + (i - 13) * TW;
-    return { x: BS - CS, y, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
-  }
-
-  // 5. Bottom-Right Corner
-  if (i === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
-
-  // 6. Bottom Edge (Right to Left)
-  if (i > 24 && i < 36) {
-    const x = BS - CS - (i - 24) * TW;
-    return { x, y: BS - CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
-  }
-
-  // 7. Bottom-Left Corner (Prison)
-  if (i === 36) return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" };
-
-  // 8. Left Edge (Bottom to Top)
-  if (i >= 36) {
-    // Change the denominator to match your actual number of tiles.
-    // If you currently have 10 tiles, keep it as 10.
-    // If you add an 11th tile, change this to 11.
-    const leftTW = (BS - CS * 2) / 10; 
-    
-    // index is used for positioning; ensure it ranges 0-9
-    const y = BS - CS - (i - 36) * leftTW;
-    return { x: 0, y, w: CS, h: leftTW, side: "left", textRot: 90, bandEdge: "right" };
+  if (position === "left") {
+    return { x: 0, y: CS + index * TW, w: CS, h: TW, side: "left", textRot: 90, bandEdge: "right" };
   }
 
   return { x: 0, y: 0, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
