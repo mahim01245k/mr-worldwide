@@ -67,7 +67,7 @@ function getTileLayout(tile: BoardTile): {
     // Change the denominator to match your actual number of tiles.
     // If you currently have 10 tiles, keep it as 10.
     // If you add an 11th tile, change this to 11.
-    const leftTW = (BS - CS * 2) / 11; 
+    const leftTW = (BS - CS * 2) / 10; 
     
     // index is used for positioning; ensure it ranges 0-9
     const y = BS - CS - (i - 36) * leftTW;
@@ -339,7 +339,11 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   return (
     <>
       <defs>
-        
+        {tiles.filter(t => t.flagCode).map(tile => (
+          <clipPath key={`fc-${tile.id}`} id={`fc-${tile.id}`}>
+            <circle cx={0} cy={0} r={13} />
+          </clipPath>
+        ))}
       </defs>
       {tiles.filter(t => t.flagCode).map(tile => {
         const center = getFlagCenter(tile);
