@@ -236,7 +236,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               textAnchor="middle"
               dominantBaseline="middle"
               // Dynamic font size: smaller for long names, larger for short names
-              fontSize={tile.name.length > 10 ? 6.5 : 8.5}
+fontSize={tile.name.length > 10 ? 6.5 : 9.5}
               fill="#e8e4ff"
               fontWeight="700"
               style={{
@@ -275,7 +275,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
               fontSize={7.5} fill="#ddd8ff" fontWeight="700"
               style={{ userSelect: "none" }}>
-              {tile.name.length > 9 ? tile.name.slice(0, 8) + "…" : tile.name}
+              {tile.name}
             </text>
             {tile.type === "tax" && tile.taxAmount && (
               <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
