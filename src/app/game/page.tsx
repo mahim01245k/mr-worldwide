@@ -10,7 +10,7 @@ import { PLAYER_COLOR_HEX } from "@/types/game";
 import { BOARD_TILES } from "@/lib/game/boardData";
 import { Copy, RotateCcw, Send, Home, Hotel, DollarSign, Trophy } from "lucide-react";
 import { useState, useRef } from "react";
-
+import { TileDetail } from "@/components/board/TileDetail";
 // ── Game Over Modal ──────────────────────────────────────────────────────────
 function GameOverModal() {
   const { gameState, myPlayerId } = useGameStore();
@@ -268,6 +268,7 @@ export default function GamePage() {
     <div className="h-screen overflow-hidden flex flex-col" style={{ background: "#12102a" }}>
       <Notifications />
       <GameOverModal />
+      <TileDetail /> {/* <--- FIX: This was missing, causing nothing to happen when a tile was clicked! */}
 
       {/* ── 3-COLUMN LAYOUT fills entire viewport height ── */}
       <div className="flex flex-1 min-h-0">
