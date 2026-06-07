@@ -228,40 +228,47 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             /> */}
             {/* <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
               fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} /> */}
-
+{/* ── 1. Blurred Flag Background ── */}
+    <image
+      href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
+      x={cx - (w * 1.5) / 2} y={cy - (w * 1.5) / 2 - 20}
+      width={w * 1.5} height={w * 1.5}
+      style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
+    />
+    {/* ── 2. Circular Flag ── */}
+    <clipPath id={`flag-clip-${tile.id}`}>
+      <circle cx={cx} cy={cy - 25} r={w * 0.35} />
+    </clipPath>
+    <image
+      href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
+      x={cx - (w * 0.7)} y={cy - 25 - (w * 0.35)}
+      width={w * 0.7} height={w * 0.7}
+      clipPath={`url(#flag-clip-${tile.id})`}
+      preserveAspectRatio="xMidYMid slice"
+    />
             {/* City name */}
-            <text
-              x={cx}
-              y={cy}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize={tile.name.length > 10 ? 7 : 11}
-              fill="#e8e4ff"
-              fontWeight="400"
-              fontFamily="'Yanone Kaffeesatz', 'Segoe UI', serif"
-              style={{
-                userSelect: "none",
-                textShadow: "0 0 0.5em #262a4c",
-                wordBreak: "break-word",
-                lineHeight: "0.75em",
-              }}
-            >
-              {tile.name}
-            </text>
+            {/* ── 3. City Name ── */}
+    <text
+      x={cx} y={cy + 15}
+      textAnchor="middle" dominantBaseline="middle"
+      fontSize={12} fill="white" fontWeight="700"
+      style={{ userSelect: "none" }}
+    >
+      {tile.name}
+    </text>
 
             {/* Price badge */}
             {tile.price && (
-              <g>
-                <rect x={cx - 16} y={cy + vH * 0.28} width={32} height={13}
-                  fill="rgba(0,0,0,0.45)" rx={3}
-                  stroke="rgba(255,255,255,0.08)" strokeWidth={0.5} />
-                <text x={cx} y={cy + vH * 0.28 + 7} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={8} fill="#fff" fontWeight="700"
-                  style={{ userSelect: "none" }}>
-                  ${tile.price}
-                </text>
-              </g>
-            )}
+      <g>
+        <rect x={cx - 20} y={h - 22} width={40} height={16}
+          fill="rgba(255,255,255,0.18)" rx={4} />
+        <text x={cx} y={h - 14} textAnchor="middle" dominantBaseline="middle"
+          fontSize={10} fill="white" fontWeight="700"
+          style={{ userSelect: "none" }}>
+          {tile.price}$
+        </text>
+      </g>
+    )}
           </g>
         ) : (
           // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
