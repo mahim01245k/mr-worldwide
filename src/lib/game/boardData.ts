@@ -157,11 +157,3 @@ export function getCornerTiles(): BoardTile[] {
   );
 }
 
-// ── GameBoard.tsx text fixes (apply these changes) ────────────────────────
-// 1. City name — remove slice, increase font size:
-//    fontSize={9}   (was 8.5 or dynamic)
-//    {tile.name}    (remove the .length > 9 ? slice : name)
-//
-// 2. In the special tile text (treasure/surprise etc), same:
-//    {tile.name}    (remove slice)
-//    fontSize={8}
