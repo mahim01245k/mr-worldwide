@@ -35,10 +35,10 @@ function getTileLayout(tile: BoardTile): {
   const { position, index, id } = tile;
 
   // ── Corners by id ──────────────────────────────────────────────────────
-  if (id === 0)  return { x: 0,       y: 0,       w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-left  START
-  if (id === 12) return { x: BS - CS, y: 0,       w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-right PRISON
-  if (id === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top"    }; // bot-right VACATION
-  if (id === 36) return { x: 0,       y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top"    }; // bot-left  GO-TO-PRISON
+  if (id === 0) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-left  START
+  if (id === 12) return { x: BS - CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-right PRISON
+  if (id === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" }; // bot-right VACATION
+  if (id === 36) return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" }; // bot-left  GO-TO-PRISON
 
   // ── Top row: ids 1–11, left→right ──────────────────────────────────────
   if (position === "top") {
@@ -73,10 +73,10 @@ function getFlagCenter(tile: BoardTile): [number, number] | null {
   if (!tile.flagCode) return null;
   const { x, y, w, h, side } = getTileLayout(tile);
   if (side === "corner") return null;
-  if (side === "top")    return [x + w / 2, y + h];
-  if (side === "right")  return [x,         y + h / 2];
+  if (side === "top") return [x + w / 2, y + h];
+  if (side === "right") return [x, y + h / 2];
   if (side === "bottom") return [x + w / 2, y];
-  if (side === "left")   return [x + w,     y + h / 2];
+  if (side === "left") return [x + w, y + h / 2];
   return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
           <g>
             {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
                 Instead use a clipped circle with image */}
-                
+
             {/* <clipPath id={`flag-clip-${tile.id}`}>
               <circle cx={cx} cy={cy - vH * 0.3} r={16} /> 
             </clipPath> */}
@@ -232,19 +232,20 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             {/* City name */}
             <text
               x={cx}
-              y={cy + vH * 0.1}
+              y={cy}
               textAnchor="middle"
               dominantBaseline="middle"
-              // Dynamic font size: smaller for long names, larger for short names
-fontSize={tile.name.length > 10 ? 6.5 : 9.5}
+              fontSize={tile.name.length > 10 ? 7 : 11}
               fill="#e8e4ff"
-              fontWeight="700"
+              fontWeight="400"
+              fontFamily="'Yanone Kaffeesatz', 'Segoe UI', serif"
               style={{
                 userSelect: "none",
-                fontFamily: '"Yanone Kaffeesatz", Segoe UI, serif' // As requested previously
+                textShadow: "0 0 0.5em #262a4c",
+                wordBreak: "break-word",
+                lineHeight: "0.75em",
               }}
             >
-              {/* Remove the .slice() to show the full name */}
               {tile.name}
             </text>
 
@@ -473,7 +474,7 @@ export function GameBoard({
   phase?: string;
   buyPanel?: ReactNode;
 } = {}) {
-  const { gameState, selectedTileId, selectTile } = useGameStore();
+  const { gameState, selectedTileId, selectTile, toggleTileDetail } = useGameStore();
   const tiles = useMemo(() => BOARD_TILES, []);
 
   if (!gameState) return null;
@@ -535,11 +536,11 @@ export function GameBoard({
             ownership={properties.find(p => p.tileId === tile.id)}
             players={players}
             isSelected={selectedTileId === tile.id}
-            onSelect={selectTile}
+            onSelect={(id) => { selectTile(id); toggleTileDetail(true); }}
           />
-          
+
         ))}
-<FlagLayer tiles={tiles} />
+        <FlagLayer tiles={tiles} />
         {/* Player tokens */}
         {Object.entries(byPos).map(([posStr, posPlayers]) => {
           const pos = parseInt(posStr);
