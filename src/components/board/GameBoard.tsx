@@ -235,17 +235,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       width={w * 1.5} height={w * 1.5}
       style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
     />
-    {/* ── 2. Circular Flag ── */}
-    <clipPath id={`flag-clip-${tile.id}`}>
-      <circle cx={cx} cy={cy - 25} r={w * 0.35} />
-    </clipPath>
-    <image
-      href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-      x={cx - (w * 0.7)} y={cy - 25 - (w * 0.35)}
-      width={w * 0.7} height={w * 0.7}
-      clipPath={`url(#flag-clip-${tile.id})`}
-      preserveAspectRatio="xMidYMid slice"
-    />
+    
             {/* City name */}
             {/* ── 3. City Name ── */}
     <text
