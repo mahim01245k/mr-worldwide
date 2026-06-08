@@ -6,6 +6,7 @@ import { PLAYER_COLOR_HEX } from "@/types/game";
 import { X } from "lucide-react";
 
 export function TileDetail() {
+  
   const { gameState, selectedTileId, showTileDetail, toggleTileDetail } = useGameStore();
   if (!showTileDetail || selectedTileId === null || !gameState) return null;
   const tile = BOARD_TILES.find(t => t.id === selectedTileId);
@@ -13,7 +14,7 @@ export function TileDetail() {
   const ownership = gameState.properties.find(p => p.tileId === selectedTileId);
   const owner = ownership ? gameState.players.find(p => p.id === ownership.ownerId) : null;
   const tileColor = tile.color && tile.color !== "none" ? COLOR_HEX[tile.color] : "#7c3aed";
-
+console.log("Detail rendering:", { showTileDetail, selectedTileId });
   return (
     <AnimatePresence>
       <motion.div
