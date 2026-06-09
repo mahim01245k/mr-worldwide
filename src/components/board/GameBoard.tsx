@@ -161,6 +161,12 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       }}
       style={{ cursor: "pointer", pointerEvents: "all" }} // Ensure it catches all clicks
     >
+      <defs>
+        <clipPath id={`tile-clip-${tile.id}`}>
+          <rect x={0} y={0} width={w} height={h} rx={2} />
+        </clipPath>
+      </defs>
+
       {/* Base background */}
       <rect x={0} y={0} width={w} height={h}
         fill={isSelected ? "#1e1a3a" : "#13112a"}
@@ -187,117 +193,119 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       )}
 
       {/* All content rotated around center */}
-      <g transform={`rotate(${textRot}, ${cx}, ${cy})`}>
+      <g clipPath={`url(#tile-clip-${tile.id})`}>
+        <g transform={`rotate(${textRot}, ${cx}, ${cy})`}>
 
-        {isCorner ? (
-          // ── Corner tiles ──────────────────────────────────────────────────
-          <g>
-            <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
-              fontSize={26} style={{ userSelect: "none" }}>
-              {specialEmoji}
-            </text>
-            <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
-              fontSize={9} fill="#e2e8f0" fontWeight="700"
-              style={{ userSelect: "none" }}>
-              {tile.name.toUpperCase()}
-            </text>
-            {tile.type === "start" && (
-              <text x={cx} y={cy + 24} textAnchor="middle" dominantBaseline="middle"
-                fontSize={7} fill="#22c55e"
-                style={{ userSelect: "none" }}>
-                Collect $200
-              </text>
-            )}
-          </g>
-        ) : isProperty && tile.flagCode ? (
-          // ── Property tiles with flag ──────────────────────────────────────
-          // In local rotated frame: vH = visual height, vW = visual width
-          // Top area (after band): flag
-          // Middle: city name
-          // Bottom: price badge
-          <g>
-            {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
-                Instead use a clipped circle with image */}
-
-            {/* <clipPath id={`flag-clip-${tile.id}`}>
-              <circle cx={cx} cy={cy - vH * 0.3} r={16} /> 
-            </clipPath> */}
-            {/* <image
-              href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
-              x={cx - 16} y={cy - vH * 0.3 - 16} // Shifted higher by changing 0.15 to 0.3
-              width={32} height={32}             // Increased from 24 to 32
-              clipPath={`url(#flag-clip-${tile.id})`}
-              preserveAspectRatio="xMidYMid slice"
-            /> */}
-            {/* <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
-              fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} /> */}
-            {/* ── 1. Blurred Flag Background ── */}
-            <image
-              href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-              x={cx - (w * 1.5) / 2} y={cy - (w * 1.5) / 2 - 20}
-              width={w * 1.5} height={w * 1.5}
-              style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
-            />
-
-            {/* City name */}
-            {/* ── 3. City Name ── */}
-            <text
-              x={cx} y={cy + 15}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize={12} fill="white" fontWeight="700"
-              style={{ userSelect: "none" }}
-            >
-              {tile.name}
-            </text>
-
-            {/* Price badge */}
-            {tile.price && (
-              <g>
-                <rect x={cx - 20} y={h - 22} width={40} height={16}
-                  fill="rgba(255,255,255,0.18)" rx={4} />
-                <text x={cx} y={h - 14} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={10} fill="white" fontWeight="700"
-                  style={{ userSelect: "none" }}>
-                  {tile.price}$
-                </text>
-              </g>
-            )}
-          </g>
-        ) : (
-          // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
-          <g>
-            {specialEmoji && (
-              <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
-                fontSize={tile.type === "tax" ? 14 : 18}
-                style={{ userSelect: "none" }}>
+          {isCorner ? (
+            // ── Corner tiles ──────────────────────────────────────────────────
+            <g>
+              <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
+                fontSize={26} style={{ userSelect: "none" }}>
                 {specialEmoji}
               </text>
-            )}
-            <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
-              fontSize={7.5} fill="#ddd8ff" fontWeight="700"
-              style={{ userSelect: "none" }}>
-              {tile.name}
-            </text>
-            {tile.type === "tax" && tile.taxAmount && (
-              <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
-                fontSize={7} fill="#fca5a5"
+              <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
+                fontSize={9} fill="#e2e8f0" fontWeight="700"
                 style={{ userSelect: "none" }}>
-                {tile.taxAmount < 1 ? `${tile.taxAmount * 100}%` : `$${tile.taxAmount}`}
+                {tile.name.toUpperCase()}
               </text>
-            )}
-            {tile.price && (
-              <g>
-                <rect x={cx - 16} y={cy + 22} width={32} height={13}
-                  fill="rgba(0,0,0,0.45)" rx={3} />
-                <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={8} fill="#fff" fontWeight="700"
+              {tile.type === "start" && (
+                <text x={cx} y={cy + 24} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={7} fill="#22c55e"
                   style={{ userSelect: "none" }}>
-                  ${tile.price}
+                  Collect $200
                 </text>
-              </g>
-            )}
-          </g>
-        )}
+              )}
+            </g>
+          ) : isProperty && tile.flagCode ? (
+            // ── Property tiles with flag ──────────────────────────────────────
+            // In local rotated frame: vH = visual height, vW = visual width
+            // Top area (after band): flag
+            // Middle: city name
+            // Bottom: price badge
+            <g>
+              {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
+                  Instead use a clipped circle with image */}
+
+              {/* <clipPath id={`flag-clip-${tile.id}`}>
+                <circle cx={cx} cy={cy - vH * 0.3} r={16} /> 
+              </clipPath> */}
+              {/* <image
+                href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
+                x={cx - 16} y={cy - vH * 0.3 - 16} // Shifted higher by changing 0.15 to 0.3
+                width={32} height={32}             // Increased from 24 to 32
+                clipPath={`url(#flag-clip-${tile.id})`}
+                preserveAspectRatio="xMidYMid slice"
+              /> */}
+              {/* <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
+                fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} /> */}
+              {/* ── 1. Blurred Flag Background ── */}
+              <image
+                href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
+                x={cx - (w * 1.5) / 2} y={cy - (w * 1.5) / 2 - 20}
+                width={w * 1.5} height={w * 1.5}
+                style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
+              />
+
+              {/* City name */}
+              {/* ── 3. City Name ── */}
+              <text
+              x={cx} y={cy + 17}
+                textAnchor="middle" dominantBaseline="middle"
+              fontSize={13.5} fill="white" fontWeight="400"
+              style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
+              >
+                {tile.name}
+              </text>
+
+              {/* Price badge */}
+              {tile.price && (
+                <g>
+                  <rect x={cx - 20} y={h - 22} width={40} height={16}
+                    fill="rgba(255,255,255,0.18)" rx={4} />
+                  <text x={cx} y={h - 14} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={10} fill="white" fontWeight="700"
+                    style={{ userSelect: "none" }}>
+                    {tile.price}$
+                  </text>
+                </g>
+              )}
+            </g>
+          ) : (
+            // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
+            <g>
+              {specialEmoji && (
+                <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={tile.type === "tax" ? 14 : 18}
+                  style={{ userSelect: "none" }}>
+                  {specialEmoji}
+                </text>
+              )}
+              <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
+                fontSize={7.5} fill="#ddd8ff" fontWeight="700"
+                style={{ userSelect: "none" }}>
+                {tile.name}
+              </text>
+              {tile.type === "tax" && tile.taxAmount && (
+                <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={7} fill="#fca5a5"
+                  style={{ userSelect: "none" }}>
+                  {tile.taxAmount < 1 ? `${tile.taxAmount * 100}%` : `$${tile.taxAmount}`}
+                </text>
+              )}
+              {tile.price && (
+                <g>
+                  <rect x={cx - 16} y={cy + 22} width={32} height={13}
+                    fill="rgba(0,0,0,0.45)" rx={3} />
+                  <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={8} fill="#fff" fontWeight="700"
+                    style={{ userSelect: "none" }}>
+                    ${tile.price}
+                  </text>
+                </g>
+              )}
+            </g>
+          )}
+        </g>
       </g>
 
       {/* Owner dot (always in tile corner, not rotated) */}
@@ -504,6 +512,16 @@ export function GameBoard({
       >
         <defs>
           {/* Flag clip paths are defined inline per tile */}
+          <filter id="richup-text-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feFlood floodColor="#262a4c" floodOpacity="1" result="floodColor"></feFlood>
+            <feComposite in="floodColor" in2="SourceAlpha" operator="in" result="coloredShadow"></feComposite>
+            <feGaussianBlur in="coloredShadow" stdDeviation="4" result="blurredShadow"></feGaussianBlur>
+            <feOffset dx="0" dy="0" in="blurredShadow" result="offsetShadow"></feOffset>
+            <feMerge>
+              <feMergeNode in="offsetShadow"></feMergeNode>
+              <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+          </filter>
         </defs>
 
         {/* Board background */}
