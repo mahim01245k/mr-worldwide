@@ -72,10 +72,10 @@ function getTokenCenter(tileId: number): [number, number] {
 function getFlagCenter(tile: BoardTile): [number, number] | null {
   if (!tile.flagCode) return null;
   const { x, y, w, h, side } = getTileLayout(tile);
-  if (side === "top") return [x + w / 2, y];
-  if (side === "right") return [x + w, y + h / 2];
-  if (side === "bottom") return [x + w / 2, y + h];
-  if (side === "left") return [x, y + h / 2];
+  if (side === "top") return [x + w / 2, y + h];
+  if (side === "right") return [x, y + h / 2];
+  if (side === "bottom") return [x + w / 2, y];
+  if (side === "left") return [x + w, y + h / 2];
   return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
