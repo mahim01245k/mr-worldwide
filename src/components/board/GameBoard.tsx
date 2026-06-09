@@ -73,10 +73,10 @@ function getFlagCenter(tile: BoardTile): [number, number] | null {
   if (!tile.flagCode) return null;
   const { x, y, w, h, side } = getTileLayout(tile);
   if (side === "corner") return null;
-  if (side === "top") return [x + w / 2, y + h];
-  if (side === "right") return [x, y + h / 2];
-  if (side === "bottom") return [x + w / 2, y];
-  if (side === "left") return [x + w, y + h / 2];
+  if (side === "top") return [x + w / 2, y + h - 10];
+  if (side === "right") return [x + 10, y + h / 2];
+  if (side === "bottom") return [x + w / 2, y + 10];
+  if (side === "left") return [x + w - 10, y + h / 2];
   return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
@@ -336,7 +336,7 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
       <defs>
         {tiles.filter(t => t.flagCode).map(tile => (
           <clipPath key={`fc-${tile.id}`} id={`fc-${tile.id}`}>
-            <circle cx={0} cy={0} r={13} />
+            <circle cx={0} cy={0} r={15} />
           </clipPath>
         ))}
       </defs>
@@ -345,15 +345,14 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
         if (!center) return null;
         const [fx, fy] = center;
         return (
-          <g key={`flag-${tile.id}`} transform={`translate(${fx},${fy})`} style={{ pointerEvents: "none" }}>
-            <circle cx={0} cy={1} r={14} fill="rgba(0,0,0,0.5)" />
+          <g key={`flag-${tile.id}`} transform={`translate(${fx},${fy})`} style={{ pointerEvents: "none", filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))" }}>
             <image
-              href={`https://flagcdn.com/w40/${tile.flagCode!.toLowerCase()}.png`}
-              x={-13} y={-13} width={26} height={26}
+              href={`https://flagcdn.com/w80/${tile.flagCode!.toLowerCase()}.png`}
+              x={-15} y={-15} width={30} height={30}
               clipPath={`url(#fc-${tile.id})`}
               preserveAspectRatio="xMidYMid slice"
             />
-            <circle cx={0} cy={0} r={13} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={1.5} />
+            <circle cx={0} cy={0} r={15} fill="none" stroke="#ffffff" strokeWidth={2.5} />
           </g>
         );
       })}
