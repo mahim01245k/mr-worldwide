@@ -225,10 +225,17 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
                   </g>
                 </g>
               ) : (
-                <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={26} style={{ userSelect: "none" }}>
-                  {specialEmoji} {/* Keep emojis */}
-                </text>
+                <g>
+                  <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={26} style={{ userSelect: "none" }}>
+                    {specialEmoji} {/* Keep emojis */}
+                  </text>
+                  <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={9} fill="#ffffff" fontWeight="700"
+                    style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
+                    {tile.name.toUpperCase()}
+                  </text>
+                </g>
               )}
             </g>
           ) : isProperty && tile.flagCode ? (
@@ -243,6 +250,28 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
                 preserveAspectRatio="xMidYMid slice"
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
+
+              {/* City name */}
+              <text
+                x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
+                fontSize={15} fill="#ffffff" fontWeight="400"
+                style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
+              >
+                {tile.name}
+              </text>
+
+              {/* Price badge */}
+              {tile.price && (
+                <g>
+                  <rect x={cx - 20} y={cy + 22} width={40} height={16}
+                    fill="rgba(0,0,0,0.4)" rx={4} />
+                  <text x={cx} y={cy + 30} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={10} fill="#ffffff" fontWeight="700"
+                    style={{ userSelect: "none" }}>
+                    {tile.price}$
+                  </text>
+                </g>
+              )}
             </g>
           ) : (
             // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
@@ -253,6 +282,29 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
                   style={{ userSelect: "none" }}>
                   {specialEmoji} {/* Keep emojis */}
                 </text>
+              )}
+              <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
+                fontSize={7.5} fill="#cccccc" fontWeight="700"
+                style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
+                {tile.name}
+              </text>
+              {tile.type === "tax" && tile.taxAmount && (
+                <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
+                  fontSize={7} fill="#ff4d4d"
+                  style={{ userSelect: "none" }}>
+                  {tile.taxAmount < 1 ? `${tile.taxAmount * 100}%` : `$${tile.taxAmount}`}
+                </text>
+              )}
+              {tile.price && (
+                <g>
+                  <rect x={cx - 16} y={cy + 22} width={32} height={13}
+                    fill="rgba(0,0,0,0.4)" rx={3} />
+                  <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={8} fill="#ffffff" fontWeight="700"
+                    style={{ userSelect: "none" }}>
+                    ${tile.price}
+                  </text>
+                </g>
               )}
             </g>
           )}
