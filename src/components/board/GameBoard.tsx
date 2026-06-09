@@ -232,7 +232,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* City name */}
               <text
                 x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
-                fontSize={13.5} fill="#ffffff" fontWeight="400"
+                fontSize={15} fill="#ffffff" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
               >
                 {tile.name}
@@ -510,20 +510,11 @@ export function GameBoard({
         {/* Inner center */}
         <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#282828" rx={4} />
 
-        {/* Center label */}
-        <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
-          fill="#3a3a3a" letterSpacing={5} fontWeight="700"
-          style={{ userSelect: "none" }}>
-          BOARD PREVIEW
-        </text>
-        <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
-          fill="#00e701" fontWeight="900" letterSpacing={2}
-          style={{ userSelect: "none" }}>
-          Mr. Worldwide
-        </text>
-        <text x={BS / 2} y={BS / 2 - 32} textAnchor="middle" fontSize={48}
-          style={{ userSelect: "none" }}>
-          🌍
+        {/* Logo */}
+        <text x={BS / 2} y={BS / 2 - 80} textAnchor="middle" fontSize={64}
+          fill="#00e701" fontWeight="900" letterSpacing={4}
+          style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
+          DHMK
         </text>
 
         {/* All tiles */}

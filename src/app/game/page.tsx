@@ -289,7 +289,7 @@ export default function GamePage() {
           <div className="p-4 border-b border-[#3a3a3a] flex-shrink-0" style={{ background: "#282828" }}>
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl font-black text-white tracking-tight">
-                MR.<span className="text-violet-400">WORLDWIDE</span>
+                DHMK
               </span>
               <div className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${isConnected ? "bg-green-900/40 text-green-400" : "bg-red-900/40 text-red-400"}`}>
                 {isConnected ? "Online" : "Offline"}
