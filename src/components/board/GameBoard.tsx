@@ -251,8 +251,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* City name */}
               {/* ── 3. City Name ── */}
               <text
-                x={cx} y={isTopSide ? cy - (vH * 0.18) : cy + (vH * 0.16)}
-                textAnchor="middle" dominantBaseline="middle" y={cy - vH / 2 + 45} // Adjusted to be below the flag
+                x={cx} y={cy - vH / 2 + 45} textAnchor="middle" dominantBaseline="middle" // Adjusted to be below the flag
                 fontSize={13.5} fill="white" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
               >
