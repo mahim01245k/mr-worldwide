@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
+import { Yanone_Kaffeesatz } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/store/gameStore";
@@ -9,8 +10,13 @@ import { Notifications } from "@/components/ui/Notifications";
 import { PLAYER_COLOR_HEX } from "@/types/game";
 import { BOARD_TILES } from "@/lib/game/boardData";
 import { Copy, RotateCcw, Send, Home, Hotel, DollarSign, Trophy } from "lucide-react";
-import { useState, useRef } from "react";
 import { TileDetail } from "@/components/board/TileDetail";
+
+const yanone = Yanone_Kaffeesatz({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-yanone",
+});
 
 // ── Game Over Modal ──────────────────────────────────────────────────────────
 function GameOverModal() {
@@ -266,7 +272,7 @@ export default function GamePage() {
   const activePanel = buyPanel ?? auctionPanel ?? cardPanel ?? jailPanel ?? tradePanel ?? null;
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col" style={{ background: "#12102a" }}>
+    <div className={`${yanone.variable} h-screen overflow-hidden flex flex-col font-sans`} style={{ background: "#12102a" }}>
       <Notifications />
       <GameOverModal />
 

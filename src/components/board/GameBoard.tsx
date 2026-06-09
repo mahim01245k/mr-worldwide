@@ -42,7 +42,7 @@ function getTileLayout(tile: BoardTile): {
 
   // ── Top row: ids 1–11, left→right ──────────────────────────────────────
   if (position === "top") {
-    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 0, bandEdge: "bottom" };
+    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
   }
 
   // ── Right col: ids 13–23, top→bottom ───────────────────────────────────
@@ -221,16 +221,19 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             <g>
               <image
                 href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-                x={cx - (vW * 1.5) / 2} y={cy - (vW * 1.5) / 2}
-                width={vW * 1.5} height={vW * 1.5}
+                x={cx - (vW * 1.2) / 2}
+                y={cy - (vH * 1.2) / 2}
+                width={vW * 1.2}
+                height={vH * 1.2}
+                preserveAspectRatio="xMidYMid slice"
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
 
               {/* City name */}
               <text
-                x={cx} y={cy - 10} textAnchor="middle" dominantBaseline="middle"
+                x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
                 fontSize={13.5} fill="white" fontWeight="400"
-                style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
+                style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
               >
                 {tile.name}
               </text>
@@ -238,9 +241,9 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* Price badge */}
               {tile.price && (
                 <g>
-                  <rect x={cx - 20} y={cy + 5} width={40} height={16}
+                  <rect x={cx - 20} y={cy + 22} width={40} height={16}
                     fill="rgba(255,255,255,0.18)" rx={4} />
-                  <text x={cx} y={cy + 13} textAnchor="middle" dominantBaseline="middle"
+                  <text x={cx} y={cy + 30} textAnchor="middle" dominantBaseline="middle"
                     fontSize={10} fill="white" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
@@ -252,7 +255,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
             <g>
               {specialEmoji && (
-                <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
+                <text x={cx} y={cy - 10} textAnchor="middle" dominantBaseline="middle"
                   fontSize={tile.type === "tax" ? 14 : 18}
                   style={{ userSelect: "none" }}>
                   {specialEmoji}
@@ -260,7 +263,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               )}
               <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
                 fontSize={7.5} fill="#ddd8ff" fontWeight="700"
-                style={{ userSelect: "none" }}>
+                style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
                 {tile.name}
               </text>
               {tile.type === "tax" && tile.taxAmount && (
@@ -492,7 +495,7 @@ export function GameBoard({
           <filter id="richup-text-shadow" x="-50%" y="-50%" width="200%" height="200%">
             <feFlood floodColor="#262a4c" floodOpacity="1" result="floodColor"></feFlood>
             <feComposite in="floodColor" in2="SourceAlpha" operator="in" result="coloredShadow"></feComposite>
-            <feGaussianBlur in="coloredShadow" stdDeviation="4" result="blurredShadow"></feGaussianBlur>
+            <feGaussianBlur in="coloredShadow" stdDeviation="1.2" result="blurredShadow"></feGaussianBlur>
             <feOffset dx="0" dy="0" in="blurredShadow" result="offsetShadow"></feOffset>
             <feMerge>
               <feMergeNode in="offsetShadow"></feMergeNode>
