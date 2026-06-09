@@ -99,16 +99,16 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   const bandColor = (() => {
     if (tile.color && tile.color !== "none") return COLOR_HEX[tile.color];
     switch (tile.type) {
-      case "start": return "#16a34a";
-      case "vacation": return "#0891b2";
-      case "go-to-prison": return "#dc2626";
-      case "prison": return "#7c3aed";
-      case "treasure": return "#d97706";
-      case "surprise": return "#7c3aed";
-      case "airport": return "#0369a1";
-      case "tax": return "#b91c1c";
-      case "utility": return "#0891b2";
-      default: return "#1e1b4b";
+      case "start": return "#00e701"; // Kick Green
+      case "vacation": return "#00ccff"; // Light Blue
+      case "go-to-prison": return "#ff4d4d"; // Red
+      case "prison": return "#9966ff"; // Purple
+      case "treasure": return "#ffcc00"; // Yellow
+      case "surprise": return "#9966ff"; // Purple
+      case "airport": return "#00ccff"; // Light Blue
+      case "tax": return "#ff9900"; // Orange
+      case "utility": return "#00ccff"; // Light Blue
+      default: return "#3a3a3a"; // Dark Grey
     }
   })();
 
@@ -141,11 +141,11 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
     switch (tile.type) {
       case "treasure": return "💰";
       case "surprise": return "❓";
-      case "airport": return "✈️";
-      case "utility": return tile.name.includes("Water") ? "💧" : "⛽";
+      case "airport": return "✈️"; // Keep as emoji
+      case "utility": return tile.name.includes("Water") ? "💧" : "⛽"; // Keep as emoji
       case "tax": return "💸";
-      case "start": return "▶▶";
-      case "vacation": return "🏖️";
+      case "start": return "▶▶"; // Keep as text
+      case "vacation": return "🏖️"; // Keep as emoji
       case "go-to-prison": return "☠️";
       case "prison": return "🔒";
       default: return null;
@@ -170,8 +170,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       {/* Base background */}
       <rect x={0} y={0} width={w} height={h}
         fill={isSelected ? "#1e1a3a" : "#13112a"}
-        stroke={isSelected ? "#a78bfa" : ownerColor ? ownerColor + "55" : "#1e1b4b"}
-        strokeWidth={isSelected ? 2 : 0.8}
+        stroke={isSelected ? "#00e701" : ownerColor ? ownerColor + "55" : "#3a3a3a"}
+        strokeWidth={isSelected ? 2 : 1}
         rx={2}
       />
 
@@ -188,7 +188,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       )} */}
 
       {/* Mortgage overlay */}
-      {ownership?.isMortgaged && (
+      {ownership?.isMortgaged && ( // Keep as is, dark overlay is good
         <rect x={0} y={0} width={w} height={h} fill="#000" fillOpacity={0.5} rx={2} />
       )}
 
@@ -201,16 +201,16 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             <g>
               <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
                 fontSize={26} style={{ userSelect: "none" }}>
-                {specialEmoji}
+                {specialEmoji} {/* Keep emojis */}
               </text>
               <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
-                fontSize={9} fill="#e2e8f0" fontWeight="700"
-                style={{ userSelect: "none" }}>
+                fontSize={9} fill="#ffffff" fontWeight="700"
+                style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
                 {tile.name.toUpperCase()}
               </text>
               {tile.type === "start" && (
                 <text x={cx} y={cy + 24} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={7} fill="#22c55e"
+                  fontSize={7} fill="#00e701"
                   style={{ userSelect: "none" }}>
                   Collect $200
                 </text>
@@ -232,7 +232,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* City name */}
               <text
                 x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
-                fontSize={13.5} fill="white" fontWeight="400"
+                fontSize={13.5} fill="#ffffff" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
               >
                 {tile.name}
@@ -242,9 +242,9 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {tile.price && (
                 <g>
                   <rect x={cx - 20} y={cy + 22} width={40} height={16}
-                    fill="rgba(255,255,255,0.18)" rx={4} />
+                    fill="rgba(0,0,0,0.4)" rx={4} />
                   <text x={cx} y={cy + 30} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={10} fill="white" fontWeight="700"
+                    fontSize={10} fill="#ffffff" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
                   </text>
@@ -258,17 +258,17 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
                 <text x={cx} y={cy - 10} textAnchor="middle" dominantBaseline="middle"
                   fontSize={tile.type === "tax" ? 14 : 18}
                   style={{ userSelect: "none" }}>
-                  {specialEmoji}
+                  {specialEmoji} {/* Keep emojis */}
                 </text>
               )}
               <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
-                fontSize={7.5} fill="#ddd8ff" fontWeight="700"
+                fontSize={7.5} fill="#cccccc" fontWeight="700"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
                 {tile.name}
               </text>
               {tile.type === "tax" && tile.taxAmount && (
                 <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={7} fill="#fca5a5"
+                  fontSize={7} fill="#ff4d4d"
                   style={{ userSelect: "none" }}>
                   {tile.taxAmount < 1 ? `${tile.taxAmount * 100}%` : `$${tile.taxAmount}`}
                 </text>
@@ -276,9 +276,9 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {tile.price && (
                 <g>
                   <rect x={cx - 16} y={cy + 22} width={32} height={13}
-                    fill="rgba(0,0,0,0.45)" rx={3} />
+                    fill="rgba(0,0,0,0.4)" rx={3} />
                   <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={8} fill="#fff" fontWeight="700"
+                    fontSize={8} fill="#ffffff" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     ${tile.price}
                   </text>
@@ -352,7 +352,7 @@ function PlayerToken({ player, cx, cy, ox }: {
       <circle r={11} fill={PLAYER_COLOR_HEX[player.color]} stroke="#fff" strokeWidth={2} />
       <text textAnchor="middle" dominantBaseline="middle" fontSize={11}
         style={{ userSelect: "none" }}>
-        {player.avatar}
+        {player.avatar} {/* Keep emojis */}
       </text>
     </motion.g>
   );
@@ -393,7 +393,7 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
       >
         <rect x={d1x} y={dy} width={dS} height={dS} rx={12}
           fill="white"
-          style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }} />
+          style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.6))" }} />
         {(DOTS[values[0]] || DOTS[1]).map(([px, py], i) => (
           <circle key={i}
             cx={d1x + (px / 100) * dS}
@@ -410,7 +410,7 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
       >
         <rect x={d2x} y={dy} width={dS} height={dS} rx={12}
           fill="white"
-          style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }} />
+          style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.6))" }} />
         {(DOTS[values[1]] || DOTS[1]).map(([px, py], i) => (
           <circle key={i}
             cx={d2x + (px / 100) * dS}
@@ -421,18 +421,18 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
 
       {/* Labels */}
       <text x={mid} y={dy + dS + 20} textAnchor="middle"
-        fontSize={12} fill={isDouble ? "#fbbf24" : "#8b7cf6"}
-        fontWeight="700" style={{ userSelect: "none" }}>
+        fontSize={12} fill={isDouble ? "#ffcc00" : "#00e701"}
+        fontWeight="700" style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
         {phase === "waiting" ? "" : isDouble ? `Double! (${total})` : `Total: ${total}`}
       </text>
 
       {/* Roll button */}
       <g
         onClick={active ? onRoll : undefined}
-        style={{ cursor: active ? "pointer" : "not-allowed" }}
+        style={{ cursor: active ? "pointer" : "not-allowed", fontFamily: "var(--font-yanone), sans-serif" }}
       >
         <rect x={mid - 72} y={mid + 20} width={144} height={40} rx={10}
-          fill={active ? "#7c3aed" : "#2a2550"}
+          fill={active ? "#00e701" : "#282828"}
           style={{ transition: "fill 0.2s" }}
         />
         <text x={mid} y={mid + 45} textAnchor="middle"
@@ -493,7 +493,7 @@ export function GameBoard({
         <defs>
           {/* Flag clip paths are defined inline per tile */}
           <filter id="richup-text-shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feFlood floodColor="#262a4c" floodOpacity="1" result="floodColor"></feFlood>
+            <feFlood floodColor="#1a1a1a" floodOpacity="1" result="floodColor"></feFlood>
             <feComposite in="floodColor" in2="SourceAlpha" operator="in" result="coloredShadow"></feComposite>
             <feGaussianBlur in="coloredShadow" stdDeviation="1.2" result="blurredShadow"></feGaussianBlur>
             <feOffset dx="0" dy="0" in="blurredShadow" result="offsetShadow"></feOffset>
@@ -505,19 +505,19 @@ export function GameBoard({
         </defs>
 
         {/* Board background */}
-        <rect x={0} y={0} width={BS} height={BS} fill="#0d0b1e" rx={12} />
+        <rect x={0} y={0} width={BS} height={BS} fill="#1a1a1a" rx={12} />
 
         {/* Inner center */}
-        <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#080616" rx={4} />
+        <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#282828" rx={4} />
 
         {/* Center label */}
         <text x={BS / 2} y={BS / 2 - 85} textAnchor="middle" fontSize={12}
-          fill="#2d2a4a" letterSpacing={5} fontWeight="700"
+          fill="#3a3a3a" letterSpacing={5} fontWeight="700"
           style={{ userSelect: "none" }}>
           BOARD PREVIEW
         </text>
         <text x={BS / 2} y={BS / 2 - 60} textAnchor="middle" fontSize={26}
-          fill="#4c3a8a" fontWeight="900" letterSpacing={2}
+          fill="#00e701" fontWeight="900" letterSpacing={2}
           style={{ userSelect: "none" }}>
           Mr. Worldwide
         </text>
@@ -554,7 +554,7 @@ export function GameBoard({
         {currentPlayer && !currentPlayer.isBankrupt && (() => {
           const [cx, cy] = getTokenCenter(currentPlayer.position);
           return (
-            <motion.circle cx={cx} cy={cy} r={15} fill="none"
+            <motion.circle cx={cx} cy={cy} r={15} fill="none" // Keep player color distinct
               stroke={PLAYER_COLOR_HEX[currentPlayer.color]} strokeWidth={2.5}
               animate={{ r: [13, 19, 13], opacity: [0.2, 0.7, 0.2] }}
               transition={{ duration: 1.5, repeat: Infinity }} />
