@@ -1,9 +1,10 @@
 "use client";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BOARD_TILES, COLOR_HEX, BoardTile } from "@/lib/game/boardData";
 import { useGameStore } from "@/lib/store/gameStore";
 import { Player, PropertyOwnership, PLAYER_COLOR_HEX } from "@/types/game";
+import { TileDetail } from "@/components/board/TileDetail";
 
 // ── Board constants ──────────────────────────────────────────────────────────
 const BS = 900;   // board size
@@ -155,11 +156,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   return (
     <g
       transform={`translate(${x},${y})`}
-      onClick={(e) => {
-        e.stopPropagation(); // Prevents bubbling issues
-        onSelect(tile.id);
-      }}
-      style={{ cursor: "pointer", pointerEvents: "all" }} // Ensure it catches all clicks
+      onClick={() => onSelect(tile.id)}
+      style={{ cursor: "pointer" }}
     >
       {/* Base background */}
       <rect x={0} y={0} width={w} height={h}
@@ -231,37 +229,37 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             /> */}
             {/* <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
               fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} /> */}
-            {/* ── 1. Blurred Flag Background ── */}
-            <image
-              href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-              x={cx - (w * 1.5) / 2} y={cy - (w * 1.5) / 2 - 20}
-              width={w * 1.5} height={w * 1.5}
-              style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
-            />
-
+{/* ── 1. Blurred Flag Background ── */}
+    <image
+      href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
+      x={cx - (w * 1.5) / 2} y={cy - (w * 1.5) / 2 - 20}
+      width={w * 1.5} height={w * 1.5}
+      style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
+    />
+    
             {/* City name */}
             {/* ── 3. City Name ── */}
-            <text
-              x={cx} y={cy + 15}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize={12} fill="white" fontWeight="700"
-              style={{ userSelect: "none" }}
-            >
-              {tile.name}
-            </text>
+    <text
+      x={cx} y={cy + 15}
+      textAnchor="middle" dominantBaseline="middle"
+      fontSize={12} fill="white" fontWeight="700"
+      style={{ userSelect: "none" }}
+    >
+      {tile.name}
+    </text>
 
             {/* Price badge */}
             {tile.price && (
-              <g>
-                <rect x={cx - 20} y={h - 22} width={40} height={16}
-                  fill="rgba(255,255,255,0.18)" rx={4} />
-                <text x={cx} y={h - 14} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={10} fill="white" fontWeight="700"
-                  style={{ userSelect: "none" }}>
-                  {tile.price}$
-                </text>
-              </g>
-            )}
+      <g>
+        <rect x={cx - 20} y={h - 22} width={40} height={16}
+          fill="rgba(255,255,255,0.18)" rx={4} />
+        <text x={cx} y={h - 14} textAnchor="middle" dominantBaseline="middle"
+          fontSize={10} fill="white" fontWeight="700"
+          style={{ userSelect: "none" }}>
+          {tile.price}$
+        </text>
+      </g>
+    )}
           </g>
         ) : (
           // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
@@ -474,7 +472,8 @@ export function GameBoard({
   phase?: string;
   buyPanel?: ReactNode;
 } = {}) {
-  const { gameState, selectedTileId, selectTile, toggleTileDetail } = useGameStore();
+  const { gameState } = useGameStore();
+  const [selectedTileId, setSelectedTileId] = useState<number | null>(null);
   const tiles = useMemo(() => BOARD_TILES, []);
 
   if (!gameState) return null;
@@ -488,7 +487,7 @@ export function GameBoard({
   }, {});
 
   return (
-    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+    <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
         preserveAspectRatio="xMidYMid meet"
@@ -536,7 +535,7 @@ export function GameBoard({
             ownership={properties.find(p => p.tileId === tile.id)}
             players={players}
             isSelected={selectedTileId === tile.id}
-            onSelect={(id) => { selectTile(id); toggleTileDetail(true); }}
+            onSelect={(id) => { setSelectedTileId(id); }}
           />
 
         ))}
@@ -582,6 +581,14 @@ export function GameBoard({
           </foreignObject>
         )}
       </svg>
+      {selectedTileId !== null && (
+        <TileDetail
+          tileId={selectedTileId}
+          players={players}
+          properties={properties}
+          onClose={() => setSelectedTileId(null)}
+        />
+      )}
     </div>
   );
 }
