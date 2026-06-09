@@ -335,24 +335,6 @@ export default function GamePage() {
         {/* ── CENTER: BOARD ONLY — no bottom bar ── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
 
-          {/* Floating turn indicator */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-[#1a1730]/90 backdrop-blur-md border border-white/10 px-5 py-2 rounded-full shadow-xl pointer-events-none">
-            {currentPlayer && (
-              <div className="flex items-center gap-2">
-                <span className="text-base" style={{ color: PLAYER_COLOR_HEX[currentPlayer.color] }}>
-                  {currentPlayer.avatar}
-                </span>
-                <span className="text-white text-sm font-bold">
-                  {isMyTurn ? "Your turn!" : `${currentPlayer.name} is playing...`}
-                </span>
-              </div>
-            )}
-            <div className="w-px h-4 bg-white/20 mx-1" />
-            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-              Round {gameState.round}/{gameState.maxRounds}
-            </span>
-          </div>
-
           {/* Board fills ALL remaining height — no bottom bar */}
           <div className="flex-1 w-full flex items-center justify-center min-h-0 p-1">
             <div className="w-full h-full max-w-[min(100%,calc(100vh-1rem))] max-h-[min(100%,calc(100vw-36.5rem))] aspect-square relative">

@@ -42,7 +42,7 @@ function getTileLayout(tile: BoardTile): {
 
   // ── Top row: ids 1–11, left→right ──────────────────────────────────────
   if (position === "top") {
-    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
+    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 0, bandEdge: "bottom" };
   }
 
   // ── Right col: ids 13–23, top→bottom ───────────────────────────────────
@@ -94,6 +94,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   const ownerColor = owner ? PLAYER_COLOR_HEX[owner.color] : null;
   const isCorner = side === "corner";
   const isProperty = ["property", "airport", "utility"].includes(tile.type);
+  const isTopSide = side === "top";
 
   // Color for the band
   const bandColor = (() => {
@@ -241,7 +242,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* ── 1. Blurred Flag Background ── */}
               <image
                 href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-                x={cx - (vW * 1.5) / 2} y={cy - (vW * 1.5) / 2 - 20}
+                // Shift background blur away from the inner edge depending on side
+                x={cx - (vW * 1.5) / 2} y={isTopSide ? cy - (vW * 1.5) / 2 + 20 : cy - (vW * 1.5) / 2 - 20}
                 width={vW * 1.5} height={vW * 1.5}
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
@@ -249,7 +251,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* City name */}
               {/* ── 3. City Name ── */}
               <text
-                x={cx} y={cy + (vH * 0.16)}
+                x={cx} y={isTopSide ? cy - (vH * 0.18) : cy + (vH * 0.16)}
                 textAnchor="middle" dominantBaseline="middle"
                 fontSize={13.5} fill="white" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
@@ -260,9 +262,9 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* Price badge */}
               {tile.price && (
                 <g>
-                  <rect x={cx - 20} y={cy + vH / 2 - 22} width={40} height={16}
+                  <rect x={cx - 20} y={isTopSide ? cy - vH / 2 + 6 : cy + vH / 2 - 22} width={40} height={16}
                     fill="rgba(255,255,255,0.18)" rx={4} />
-                  <text x={cx} y={cy + vH / 2 - 14} textAnchor="middle" dominantBaseline="middle"
+                  <text x={cx} y={isTopSide ? cy - vH / 2 + 14 : cy + vH / 2 - 14} textAnchor="middle" dominantBaseline="middle"
                     fontSize={10} fill="white" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
@@ -352,7 +354,6 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
               clipPath={`url(#fc-${tile.id})`}
               preserveAspectRatio="xMidYMid slice"
             />
-            <circle cx={0} cy={0} r={15} fill="none" stroke="#ffffff" strokeWidth={2.5} />
           </g>
         );
       })}

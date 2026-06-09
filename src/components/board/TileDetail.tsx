@@ -32,7 +32,7 @@ export function TileDetail() {
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 {tile.flagCode ? (
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-lg flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg flex-shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
                       alt={tile.subname || tile.name}
