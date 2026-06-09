@@ -1,5 +1,5 @@
 "use client";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { BOARD_TILES, COLOR_HEX, BoardTile } from "@/lib/game/boardData";
 import { useGameStore } from "@/lib/store/gameStore";
@@ -79,18 +79,16 @@ function getFlagCenter(tile: BoardTile): [number, number] | null {
   return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
-function TileCard({ tile, ownership, players, isSelected, onSelect }: {
+const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
   tile: BoardTile;
   ownership?: PropertyOwnership;
-  players: Player[];
+  ownerColor: string | null;
   isSelected: boolean;
   onSelect: (id: number) => void;
-}) {
+}) => {
   const layout = getTileLayout(tile);
   const { x, y, w, h, side, textRot, bandEdge } = layout;
 
-  const owner = ownership ? players.find(p => p.id === ownership.ownerId) : null;
-  const ownerColor = owner ? PLAYER_COLOR_HEX[owner.color] : null;
   const isCorner = side === "corner";
   const isProperty = ["property", "airport", "utility"].includes(tile.type);
   const isTopSide = side === "top";
@@ -127,8 +125,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   // For rotated tiles, the "top" in the tile's local frame (after textRot) 
   // is where the flag should go. We place content relative to tile center.
   // The textRot rotates around the tile center.
-  const cx = w / 2;
-  const cy = h / 2;
+  const cx = useMemo(() => w / 2, [w]);
+  const cy = useMemo(() => h / 2, [h]);
 
   // In the tile's local (pre-rotation) frame, figure out content dims
   // For rotated tiles (left/right), the visual "height" is actually w, "width" is h
@@ -163,7 +161,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
     >
       <defs>
         <clipPath id={`tile-clip-${tile.id}`}>
-          <rect x={0} y={0} width={w} height={h} rx={2} />
+          <rect x={0} y={0} width={w} height={h} rx={10} />
         </clipPath>
       </defs>
 
@@ -172,7 +170,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
         fill={isSelected ? "#1e1a3a" : "#13112a"}
         stroke={isSelected ? "#00e701" : ownerColor ? ownerColor + "55" : "#3a3a3a"}
         strokeWidth={isSelected ? 2 : 1}
-        rx={2}
+        rx={10}
+        style={{ shapeRendering: "crispEdges" }} // Performance boost for rects
       />
 
       {/* Color band */}
@@ -189,7 +188,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
 
       {/* Mortgage overlay */}
       {ownership?.isMortgaged && ( // Keep as is, dark overlay is good
-        <rect x={0} y={0} width={w} height={h} fill="#000" fillOpacity={0.5} rx={2} />
+        <rect x={0} y={0} width={w} height={h} fill="#000" fillOpacity={0.5} rx={10} />
       )}
 
       {/* All content rotated around center */}
@@ -226,6 +225,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
                 width={vW * 1.2}
                 height={vH * 1.2}
                 preserveAspectRatio="xMidYMid slice"
+                loading="lazy"
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
 
@@ -306,11 +306,11 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       {/* Selected glow */}
       {isSelected && (
         <rect x={0} y={0} width={w} height={h} fill="none"
-          stroke="#a78bfa" strokeWidth={2} rx={2} strokeOpacity={0.85} />
+          stroke="#00e701" strokeWidth={2} rx={10} strokeOpacity={0.85} />
       )}
     </g>
   );
-}
+});
 function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   return (
     <>
@@ -476,6 +476,11 @@ export function GameBoard({
     return acc;
   }, {});
 
+  const handleTileSelect = useCallback((id: number) => {
+    selectTile(id);
+    toggleTileDetail(true);
+  }, [selectTile, toggleTileDetail]);
+
   return (
     <div className="w-full h-full flex items-center justify-center">
       <svg
@@ -513,17 +518,22 @@ export function GameBoard({
         <rect x={CS} y={CS} width={BS - CS * 2} height={BS - CS * 2} fill="#282828" rx={4} />
 
         {/* All tiles */}
-        {tiles.map(tile => (
-          <TileCard
-            key={tile.id}
-            tile={tile}
-            ownership={properties.find(p => p.tileId === tile.id)}
-            players={players}
-            isSelected={selectedTileId === tile.id}
-            onSelect={(id) => { selectTile(id); toggleTileDetail(true); }}
-          />
+        {tiles.map(tile => {
+          const ownership = properties.find(p => p.tileId === tile.id);
+          const owner = ownership ? players.find(p => p.id === ownership.ownerId) : null;
+          const ownerColor = owner ? PLAYER_COLOR_HEX[owner.color] : null;
 
-        ))}
+          return (
+            <TileCard
+              key={tile.id}
+              tile={tile}
+              ownership={ownership}
+              ownerColor={ownerColor}
+              isSelected={selectedTileId === tile.id}
+              onSelect={handleTileSelect}
+            />
+          );
+        })}
         <FlagLayer tiles={tiles} />
         {/* Player tokens */}
         {Object.entries(byPos).map(([posStr, posPlayers]) => {
