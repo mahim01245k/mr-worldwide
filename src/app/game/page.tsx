@@ -10,6 +10,7 @@ import { PLAYER_COLOR_HEX } from "@/types/game";
 import { BOARD_TILES } from "@/lib/game/boardData";
 import { Copy, RotateCcw, Send, Home, Hotel, DollarSign, Trophy } from "lucide-react";
 import { useState, useRef } from "react";
+import { TileDetail } from "@/components/board/TileDetail";
 
 // ── Game Over Modal ──────────────────────────────────────────────────────────
 function GameOverModal() {
@@ -356,14 +357,15 @@ export default function GamePage() {
           <div className="flex-1 w-full flex items-center justify-center min-h-0 p-2">
             <div className="w-full h-full max-w-[min(100%,calc(100vh-2rem))] max-h-[min(100%,calc(100vw-36rem))] aspect-square">
               <GameBoard
-                onRoll={handleRoll}
-                canRoll={canRoll}
-                rolling={rolling}
-                isMyTurn={isMyTurn}
-                phase={gameState.phase}
-                buyPanel={activePanel}
-              />
+      onRoll={handleRoll}
+      canRoll={canRoll}
+      rolling={rolling}
+      isMyTurn={isMyTurn}
+      phase={gameState.phase}
+      buyPanel={activePanel}
+    />
             </div>
+            <TileDetail/>
           </div>
         </div>
 
