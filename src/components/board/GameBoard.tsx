@@ -225,7 +225,6 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
                 width={vW * 1.2}
                 height={vH * 1.2}
                 preserveAspectRatio="xMidYMid slice"
-                loading="lazy"
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
 
