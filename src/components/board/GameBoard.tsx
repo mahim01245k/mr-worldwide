@@ -72,11 +72,10 @@ function getTokenCenter(tileId: number): [number, number] {
 function getFlagCenter(tile: BoardTile): [number, number] | null {
   if (!tile.flagCode) return null;
   const { x, y, w, h, side } = getTileLayout(tile);
-  if (side === "corner") return null;
-  if (side === "top") return [x + w / 2, y + h - 10];
-  if (side === "right") return [x + 10, y + h / 2];
-  if (side === "bottom") return [x + w / 2, y + 10];
-  if (side === "left") return [x + w - 10, y + h / 2];
+  if (side === "top") return [x + w / 2, y];
+  if (side === "right") return [x + w, y + h / 2];
+  if (side === "bottom") return [x + w / 2, y + h];
+  if (side === "left") return [x, y + h / 2];
   return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
@@ -219,39 +218,17 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
             </g>
           ) : isProperty && tile.flagCode ? (
             // ── Property tiles with flag ──────────────────────────────────────
-            // In local rotated frame: vH = visual height, vW = visual width
-            // Top area (after band): flag
-            // Middle: city name
-            // Bottom: price badge
             <g>
-              {/* Flag image via foreignObject — but foreignObject + SVG transforms is buggy.
-                  Instead use a clipped circle with image */}
-
-              {/* <clipPath id={`flag-clip-${tile.id}`}>
-                <circle cx={cx} cy={cy - vH * 0.3} r={16} /> 
-              </clipPath> */}
-              {/* <image
-                href={`https://flagcdn.com/w40/${tile.flagCode.toLowerCase()}.png`}
-                x={cx - 16} y={cy - vH * 0.3 - 16} // Shifted higher by changing 0.15 to 0.3
-                width={32} height={32}             // Increased from 24 to 32
-                clipPath={`url(#flag-clip-${tile.id})`}
-                preserveAspectRatio="xMidYMid slice"
-              /> */}
-              {/* <circle cx={cx} cy={cy - vH * 0.3} r={16} // Increased radius to match clip
-                fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1} /> */}
-              {/* ── 1. Blurred Flag Background ── */}
               <image
                 href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-                // Shift background blur away from the inner edge depending on side
-                x={cx - (vW * 1.5) / 2} y={cy - vH / 2 - 5} // Adjusted to be consistently at the visual top
-                width={vW * 1.5} height={vW * 1.5} // Original size for blur effect
+                x={cx - (vW * 1.5) / 2} y={cy - (vW * 1.5) / 2}
+                width={vW * 1.5} height={vW * 1.5}
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
 
               {/* City name */}
-              {/* ── 3. City Name ── */}
               <text
-                x={cx} y={cy - vH / 2 + 45} textAnchor="middle" dominantBaseline="middle" // Adjusted to be below the flag
+                x={cx} y={cy - 10} textAnchor="middle" dominantBaseline="middle"
                 fontSize={13.5} fill="white" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
               >
@@ -260,10 +237,10 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
 
               {/* Price badge */}
               {tile.price && (
-                <g> {/* Price badge rectangle */}
-                  <rect x={cx - 20} y={cy - vH / 2 + 62} width={40} height={16} // Adjusted position
-                    fill="rgba(255,255,255,0.18)" rx={4} /> {/* Price badge text */}
-                  <text x={cx} y={cy - vH / 2 + 70} textAnchor="middle" dominantBaseline="middle" // Adjusted position
+                <g>
+                  <rect x={cx - 20} y={cy + 5} width={40} height={16}
+                    fill="rgba(255,255,255,0.18)" rx={4} />
+                  <text x={cx} y={cy + 13} textAnchor="middle" dominantBaseline="middle"
                     fontSize={10} fill="white" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
@@ -495,7 +472,7 @@ export function GameBoard({
   }, {});
 
   return (
-    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+    <div className="w-full h-full flex items-center justify-center">
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
         preserveAspectRatio="xMidYMid meet"
@@ -506,6 +483,7 @@ export function GameBoard({
           height: "100%",
           maxWidth: "100%",
           maxHeight: "100%",
+          overflow: "visible",
           filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.9))"
         }}
       >
