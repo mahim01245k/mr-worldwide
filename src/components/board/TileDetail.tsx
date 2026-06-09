@@ -6,6 +6,13 @@ import { BOARD_TILES, COLOR_HEX } from "@/lib/game/boardData";
 import { PLAYER_COLOR_HEX } from "@/types/game";
 import { X } from "lucide-react";
 
+// Define Yanone Kaffeesatz at the module level to fix build errors
+const yanone = Yanone_Kaffeesatz({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-yanone",
+});
+
 export function TileDetail() {
   const { gameState, selectedTileId, showTileDetail, toggleTileDetail } = useGameStore();
 
@@ -15,13 +22,6 @@ export function TileDetail() {
   const ownership = selectedTileId !== null ? gameState.properties.find(p => p.tileId === selectedTileId) : null;
   const owner = ownership ? gameState.players.find(p => p.id === ownership.ownerId) : null;
   const tileColor = tile?.color && tile.color !== "none" ? COLOR_HEX[tile.color] : "#7c3aed";
-  
-  // Define Yanone Kaffeesatz for consistent styling
-  const yanone = Yanone_Kaffeesatz({
-    subsets: ["latin"],
-    weight: ["400", "700"],
-    variable: "--font-yanone",
-  });
 
   return (
     <AnimatePresence>
