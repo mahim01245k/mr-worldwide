@@ -243,8 +243,8 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               <image
                 href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
                 // Shift background blur away from the inner edge depending on side
-                x={cx - (vW * 1.5) / 2} y={isTopSide ? cy - (vW * 1.5) / 2 + 20 : cy - (vW * 1.5) / 2 - 20}
-                width={vW * 1.5} height={vW * 1.5}
+                x={cx - (vW * 1.5) / 2} y={cy - vH / 2 - 5} // Adjusted to be consistently at the visual top
+                width={vW * 1.5} height={vW * 1.5} // Original size for blur effect
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
 
@@ -252,7 +252,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* ── 3. City Name ── */}
               <text
                 x={cx} y={isTopSide ? cy - (vH * 0.18) : cy + (vH * 0.16)}
-                textAnchor="middle" dominantBaseline="middle"
+                textAnchor="middle" dominantBaseline="middle" y={cy - vH / 2 + 45} // Adjusted to be below the flag
                 fontSize={13.5} fill="white" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
               >
@@ -261,10 +261,10 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
 
               {/* Price badge */}
               {tile.price && (
-                <g>
-                  <rect x={cx - 20} y={isTopSide ? cy - vH / 2 + 6 : cy + vH / 2 - 22} width={40} height={16}
-                    fill="rgba(255,255,255,0.18)" rx={4} />
-                  <text x={cx} y={isTopSide ? cy - vH / 2 + 14 : cy + vH / 2 - 14} textAnchor="middle" dominantBaseline="middle"
+                <g> {/* Price badge rectangle */}
+                  <rect x={cx - 20} y={cy - vH / 2 + 62} width={40} height={16} // Adjusted position
+                    fill="rgba(255,255,255,0.18)" rx={4} /> {/* Price badge text */}
+                  <text x={cx} y={cy - vH / 2 + 70} textAnchor="middle" dominantBaseline="middle" // Adjusted position
                     fontSize={10} fill="white" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
