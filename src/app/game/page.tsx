@@ -354,17 +354,17 @@ export default function GamePage() {
           </div>
 
           {/* Board fills ALL remaining height — no bottom bar */}
-          <div className="flex-1 w-full flex items-center justify-center min-h-0 p-2">
-            <div className="w-full h-full max-w-[min(100%,calc(100vh-2rem))] max-h-[min(100%,calc(100vw-36rem))] aspect-square relative">
+          <div className="flex-1 w-full flex items-center justify-center min-h-0 p-1">
+            <div className="w-full h-full max-w-[min(100%,calc(100vh-1rem))] max-h-[min(100%,calc(100vw-36.5rem))] aspect-square relative">
               <GameBoard
-      onRoll={handleRoll}
-      canRoll={canRoll}
-      rolling={rolling}
-      isMyTurn={isMyTurn}
-      phase={gameState.phase}
-      buyPanel={activePanel}
-    />
-              <TileDetail/>
+                onRoll={handleRoll}
+                canRoll={canRoll}
+                rolling={rolling}
+                isMyTurn={isMyTurn}
+                phase={gameState.phase}
+                buyPanel={activePanel}
+              />
+              <TileDetail />
             </div>
           </div>
         </div>

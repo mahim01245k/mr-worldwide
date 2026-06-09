@@ -241,18 +241,18 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* ── 1. Blurred Flag Background ── */}
               <image
                 href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-                x={cx - (w * 1.5) / 2} y={cy - (w * 1.5) / 2 - 20}
-                width={w * 1.5} height={w * 1.5}
+                x={cx - (vW * 1.5) / 2} y={cy - (vW * 1.5) / 2 - 20}
+                width={vW * 1.5} height={vW * 1.5}
                 style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
               />
 
               {/* City name */}
               {/* ── 3. City Name ── */}
               <text
-              x={cx} y={cy + 17}
+                x={cx} y={cy + (vH * 0.16)}
                 textAnchor="middle" dominantBaseline="middle"
-              fontSize={13.5} fill="white" fontWeight="400"
-              style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
+                fontSize={13.5} fill="white" fontWeight="400"
+                style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
               >
                 {tile.name}
               </text>
@@ -260,9 +260,9 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* Price badge */}
               {tile.price && (
                 <g>
-                  <rect x={cx - 20} y={h - 22} width={40} height={16}
+                  <rect x={cx - 20} y={cy + vH / 2 - 22} width={40} height={16}
                     fill="rgba(255,255,255,0.18)" rx={4} />
-                  <text x={cx} y={h - 14} textAnchor="middle" dominantBaseline="middle"
+                  <text x={cx} y={cy + vH / 2 - 14} textAnchor="middle" dominantBaseline="middle"
                     fontSize={10} fill="white" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
