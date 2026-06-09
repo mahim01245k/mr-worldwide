@@ -35,32 +35,32 @@ function getTileLayout(tile: BoardTile): {
   const { position, index, id } = tile;
 
   // ── Corners by id ──────────────────────────────────────────────────────
-  if (id === 0) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-left  START
-  if (id === 12) return { x: BS - CS, y: 0, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // top-right PRISON
-  if (id === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" }; // bot-right VACATION
-  if (id === 36) return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "top" }; // bot-left  GO-TO-PRISON
+  if (id === 0) return { x: 0, y: 0, w: CS, h: CS, side: "corner", textRot: 180, bandEdge: "top" }; // top-left  START
+  if (id === 12) return { x: BS - CS, y: 0, w: CS, h: CS, side: "corner", textRot: 180, bandEdge: "top" }; // top-right PRISON
+  if (id === 24) return { x: BS - CS, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // bot-right VACATION
+  if (id === 36) return { x: 0, y: BS - CS, w: CS, h: CS, side: "corner", textRot: 0, bandEdge: "bottom" }; // bot-left  GO-TO-PRISON
 
   // ── Top row: ids 1–11, left→right ──────────────────────────────────────
   if (position === "top") {
-    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 0, bandEdge: "bottom" };
+    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "top" };
   }
 
   // ── Right col: ids 13–23, top→bottom ───────────────────────────────────
   if (position === "right") {
-    return { x: BS - CS, y: CS + index * TW, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "left" };
+    return { x: BS - CS, y: CS + index * TW, w: CS, h: TW, side: "right", textRot: -90, bandEdge: "right" };
   }
 
   // ── Bottom row: ids 25–35, right→left ──────────────────────────────────
   if (position === "bottom") {
-    return { x: BS - CS - (index + 1) * TW, y: BS - CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "top" };
+    return { x: BS - CS - (index + 1) * TW, y: BS - CS, w: TW, h: CS, side: "bottom", textRot: 0, bandEdge: "bottom" };
   }
 
   // ── Left col: ids 37–47, bottom→top ────────────────────────────────────
   if (position === "left") {
-    return { x: 0, y: BS - CS - (index + 1) * TW, w: CS, h: TW, side: "left", textRot: 90, bandEdge: "right" };
+    return { x: 0, y: BS - CS - (index + 1) * TW, w: CS, h: TW, side: "left", textRot: 90, bandEdge: "left" };
   }
 
-  return { x: 0, y: 0, w: TW, h: CS, side: "top", textRot: 0, bandEdge: "bottom" };
+  return { x: 0, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "top" };
 }
 
 function getTokenCenter(tileId: number): [number, number] {
@@ -73,10 +73,10 @@ function getFlagCenter(tile: BoardTile): [number, number] | null {
   if (!tile.flagCode) return null;
   const { x, y, w, h, side } = getTileLayout(tile);
   if (side === "corner") return null;
-  if (side === "top") return [x + w / 2, y + h - 10];
-  if (side === "right") return [x + 10, y + h / 2];
-  if (side === "bottom") return [x + w / 2, y + 10];
-  if (side === "left") return [x + w - 10, y + h / 2];
+  if (side === "top") return [x + w / 2, y + 25];
+  if (side === "right") return [x + w - 25, y + h / 2];
+  if (side === "bottom") return [x + w / 2, y + h - 25];
+  if (side === "left") return [x + 25, y + h / 2];
   return null;
 }
 // ── Tile renderer ────────────────────────────────────────────────────────────
@@ -154,13 +154,14 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
   })();
 
   return (
-    <g
+    <motion.g
       transform={`translate(${x},${y})`}
+      whileHover={{ scale: 1.015 }}
+      style={{ transformOrigin: `${cx}px ${cy}px`, cursor: "pointer", pointerEvents: "all" }}
       onClick={(e) => {
         e.stopPropagation(); // Prevents bubbling issues
         onSelect(tile.id);
       }}
-      style={{ cursor: "pointer", pointerEvents: "all" }} // Ensure it catches all clicks
     >
       <defs>
         <clipPath id={`tile-clip-${tile.id}`}>
@@ -169,10 +170,18 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
       </defs>
 
       {/* Base background */}
-      <rect x={0} y={0} width={w} height={h}
-        fill={isSelected ? "#1e1a3a" : "#13112a"}
-        stroke={isSelected ? "#a78bfa" : ownerColor ? ownerColor + "55" : "#1e1b4b"}
-        strokeWidth={isSelected ? 2 : 0.8}
+      <motion.rect x={0} y={0} width={w} height={h}
+        initial={false}
+        animate={{
+          fill: isSelected ? "#1e1a3a" : "#13112a",
+          stroke: isSelected ? "#a78bfa" : ownerColor ? ownerColor + "55" : "#1e1b4b"
+        }}
+        whileHover={{
+          fill: isSelected ? "#252145" : "#1c1a36",
+          stroke: isSelected ? "#c4b5fd" : "#2d2a4a"
+        }}
+        transition={{ duration: 0.2 }}
+        strokeWidth={isSelected ? 2 : 1}
         rx={2}
       />
 
@@ -251,7 +260,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* City name */}
               {/* ── 3. City Name ── */}
               <text
-                x={cx} y={cy - vH / 2 + 45} textAnchor="middle" dominantBaseline="middle" // Adjusted to be below the flag
+                x={cx} y={cy - vH / 2 + 60} textAnchor="middle" dominantBaseline="middle" // Positioned lower to be clearly under the flag
                 fontSize={13.5} fill="white" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "Yanone Kaffeesatz, Segoe UI, serif", filter: "url(#richup-text-shadow)" }}
               >
@@ -261,9 +270,9 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
               {/* Price badge */}
               {tile.price && (
                 <g> {/* Price badge rectangle */}
-                  <rect x={cx - 20} y={cy - vH / 2 + 62} width={40} height={16} // Adjusted position
+                  <rect x={cx - 20} y={cy + vH / 2 - 24} width={40} height={16} // Moved to bottom
                     fill="rgba(255,255,255,0.18)" rx={4} /> {/* Price badge text */}
-                  <text x={cx} y={cy - vH / 2 + 70} textAnchor="middle" dominantBaseline="middle" // Adjusted position
+                  <text x={cx} y={cy + vH / 2 - 16} textAnchor="middle" dominantBaseline="middle" // Moved to bottom
                     fontSize={10} fill="white" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
@@ -328,7 +337,7 @@ function TileCard({ tile, ownership, players, isSelected, onSelect }: {
         <rect x={0} y={0} width={w} height={h} fill="none"
           stroke="#a78bfa" strokeWidth={2} rx={2} strokeOpacity={0.85} />
       )}
-    </g>
+    </motion.g>
   );
 }
 function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
