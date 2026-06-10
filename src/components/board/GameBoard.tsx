@@ -358,7 +358,7 @@ function PlayerToken({ player, cx, cy, ox, rotation }: {
 }
 
 // ── Dice in center ────────────────────────────────────────────────────────────
-function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
+function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEndTurn }: {
   values: [number, number]; rolling: boolean;
   canRoll: boolean; isMyTurn: boolean; phase: string;
   onRoll: () => void;
@@ -378,9 +378,8 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
   const d1x = mid - dS - gap / 2;
   const d2x = mid + gap / 2;
   const dy = mid - dS / 2 - 28;
-  const isDouble = values[0] === values[1];
-  const total = values[0] + values[1];
-  const active = canRoll && isMyTurn && !rolling && phase === "rolling";
+  const showRollButton = canRoll && isMyTurn && !rolling && phase === "rolling";
+  const showEndTurnButton = isMyTurn && !rolling && phase !== "rolling" && onEndTurn; // Only show if onEndTurn is provided
 
   return (
     <g>
@@ -418,27 +417,46 @@ function CenterDice({ values, rolling, canRoll, isMyTurn, phase, onRoll }: {
         ))}
       </motion.g>
 
-      {/* Labels */}
-      <text x={mid} y={dy + dS + 20} textAnchor="middle"
-        fontSize={12} fill={isDouble ? "#ffcc00" : "#00e701"}
-        fontWeight="700" style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
-        {phase === "waiting" ? "" : isDouble ? `Double! (${total})` : `Total: ${total}`}
-      </text>
+      {/* Action buttons */}
+      <g>
+        {showRollButton && (
+          <g
+            onClick={onRoll}
+            style={{ cursor: "pointer", fontFamily: "var(--font-yanone), sans-serif" }}
+          >
+            <rect x={mid - 72} y={mid + 20} width={144} height={40} rx={10}
+              fill="#00e701"
+              style={{ transition: "fill 0.2s" }}
+            />
+            <text x={mid} y={mid + 45} textAnchor="middle"
+              fontSize={14} fill="#fff" fontWeight="800" style={{ userSelect: "none" }}>
+              🎲  Roll Dice
+            </text>
+          </g>
+        )}
 
-      {/* Roll button */}
-      <g
-        onClick={active ? onRoll : undefined}
-        style={{ cursor: active ? "pointer" : "not-allowed", fontFamily: "var(--font-yanone), sans-serif" }}
-      >
-        <rect x={mid - 72} y={mid + 20} width={144} height={40} rx={10}
-          fill={active ? "#00e701" : "#282828"}
-          style={{ transition: "fill 0.2s" }}
-        />
-        <text x={mid} y={mid + 45} textAnchor="middle"
-          fontSize={14} fill={active ? "#fff" : "#6b7280"}
-          fontWeight="800" style={{ userSelect: "none" }}>
-          {rolling ? "Rolling..." : isMyTurn && phase === "rolling" ? "🎲  Roll Dice" : "Waiting..."}
-        </text>
+        {showEndTurnButton && (
+          <g
+            onClick={onEndTurn}
+            style={{ cursor: "pointer", fontFamily: "var(--font-yanone), sans-serif" }}
+          >
+            <rect x={mid - 72} y={mid + 20} width={144} height={40} rx={10}
+              fill="#ff9900" // Orange for End Turn
+              style={{ transition: "fill 0.2s" }}
+            />
+            <text x={mid} y={mid + 45} textAnchor="middle"
+              fontSize={14} fill="#fff" fontWeight="800" style={{ userSelect: "none" }}>
+              End Turn
+            </text>
+          </g>
+        )}
+
+        {!showRollButton && !showEndTurnButton && (
+          <text x={mid} y={mid + 45} textAnchor="middle"
+            fontSize={14} fill="#6b7280" fontWeight="800" style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
+            Waiting...
+          </text>
+        )}
       </g>
     </g>
   );
@@ -450,15 +468,15 @@ export function GameBoard({
   canRoll = false,
   rolling = false,
   isMyTurn = false,
-  phase = "waiting",
-  buyPanel,
+  phase = "waiting", // Default phase
+  onEndTurn, // New prop for ending turn
 }: {
   onRoll?: () => void;
   canRoll?: boolean;
   rolling?: boolean;
   isMyTurn?: boolean;
   phase?: string;
-  buyPanel?: ReactNode;
+  onEndTurn?: () => void; // Make it optional for now, but will be required by game logic
 } = {}) {
   const { gameState, selectedTileId, selectTile, toggleTileDetail } = useGameStore();
   const tiles = useMemo(() => BOARD_TILES, []);
@@ -568,22 +586,16 @@ export function GameBoard({
         })()}
 
         {/* Dice + roll button in center */}
-        {onRoll && (
-          <CenterDice
+        {(onRoll || onEndTurn) && ( // Show CenterActions if either action is possible
+          <CenterActions
             values={diceValues}
             rolling={rolling}
             canRoll={canRoll}
             isMyTurn={isMyTurn}
             phase={phase}
             onRoll={onRoll}
+            onEndTurn={onEndTurn}
           />
-        )}
-
-        {/* Buy panel overlay */}
-        {buyPanel && (
-          <foreignObject x={CS + 20} y={BS / 2 + 80} width={BS - CS * 2 - 40} height={120}>
-            <div>{buyPanel}</div>
-          </foreignObject>
         )}
       </svg>
     </div>
