@@ -361,7 +361,8 @@ function PlayerToken({ player, cx, cy, ox, rotation }: {
 function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEndTurn }: {
   values: [number, number]; rolling: boolean;
   canRoll: boolean; isMyTurn: boolean; phase: string;
-  onRoll: () => void;
+  onRoll?: () => void;
+  onEndTurn?: () => void;
 }) {
   const DOTS: Record<number, [number, number][]> = {
     1: [[50, 50]],
