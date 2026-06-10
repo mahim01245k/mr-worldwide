@@ -89,9 +89,7 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
   const layout = getTileLayout(tile);
   const { x, y, w, h, side, textRot, bandEdge } = layout;
 
-  const isCorner = side === "corner";
   const isProperty = ["property", "airport", "utility"].includes(tile.type);
-  const isTopSide = side === "top";
 
   // Color for the band
   const bandColor = (() => {
@@ -195,7 +193,7 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
       <g clipPath={`url(#tile-clip-${tile.id})`}>
         <g transform={`rotate(${textRot}, ${cx}, ${cy})`}>
 
-          {isCorner ? (
+          {side === "corner" ? (
             // ── Corner tiles ──────────────────────────────────────────────────
             <g>
               <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
@@ -339,13 +337,13 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   );
 }
 // ── Player token ─────────────────────────────────────────────────────────────
-function PlayerToken({ player, cx, cy, ox }: {
-  player: Player; cx: number; cy: number; ox: number;
+function PlayerToken({ player, cx, cy, ox, rotation }: {
+  player: Player; cx: number; cy: number; ox: number; rotation: number;
 }) {
   const color = PLAYER_COLOR_HEX[player.color];
   return (
     <motion.g
-      animate={{ x: cx + ox, y: cy }}
+      animate={{ x: cx + ox, y: cy, rotate: rotation }}
       initial={false}
       transition={{ type: "spring", stiffness: 180, damping: 20 }}
     >
@@ -538,10 +536,23 @@ export function GameBoard({
         {Object.entries(byPos).map(([posStr, posPlayers]) => {
           const pos = parseInt(posStr);
           const [cx, cy] = getTokenCenter(pos);
+
+          const tile = BOARD_TILES.find(t => t.id === pos);
+          let baseRot = 0;
+          if (tile) {
+            if (tile.position === "top" || pos === 0) baseRot = 90;
+            else if (tile.position === "right" || pos === 12) baseRot = 180;
+            else if (tile.position === "bottom" || pos === 24) baseRot = 270;
+            else if (tile.position === "left" || pos === 36) baseRot = 0;
+          }
+          // Natural SVG orientation of the token (eyes at bottom) faces Down.
+          // We add 180 so that "baseRot = 0" (Left side) results in facing Up.
+          const rotation = (baseRot + 180) % 360;
+
           return posPlayers.map((player, idx) => {
             const total = posPlayers.length;
             const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
-            return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} />;
+            return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} rotation={rotation} />;
           });
         })}
 

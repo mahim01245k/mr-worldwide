@@ -52,7 +52,7 @@ export function TileDetail() {
                 )}
                 <div className={`${yanone.variable} font-sans`}>
                   <h3 className="text-white font-black text-lg font-yanone">{tile.name}</h3>
-                  <p className="text-[#cccccc] text-sm font-yanone">{tile.subname || tile.type.toUpperCase()}</p>
+                  <p className="text-[#cccccc] text-sm font-yanone">{tile.subname || (tile.type === "property" ? "CITY" : tile.type.toUpperCase())}</p>
                 </div>
               </div>
               <button onClick={() => toggleTileDetail(false)} className="text-slate-500 hover:text-white transition-colors mt-1">
