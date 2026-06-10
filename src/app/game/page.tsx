@@ -115,6 +115,7 @@ export default function GamePage() {
   const router = useRouter();
 
   const handleEndTurn = useCallback(() => {
+    console.log("Emitting endTurn event for player:", myPlayerId);
     socket?.emit("endTurn");
   }, [socket]);
 
@@ -356,6 +357,7 @@ export default function GamePage() {
       rolling={rolling}
       isMyTurn={isMyTurn}
       phase={gameState.phase}
+      actionPanel={activePanel}
       onEndTurn={handleEndTurn}
     />
               <TileDetail/>

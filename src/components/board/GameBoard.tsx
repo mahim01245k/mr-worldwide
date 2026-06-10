@@ -363,6 +363,7 @@ function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEn
   canRoll: boolean; isMyTurn: boolean; phase: string;
   onRoll?: () => void;
   onEndTurn?: () => void;
+  actionPanel?: ReactNode;
 }) {
   const DOTS: Record<number, [number, number][]> = {
     1: [[50, 50]],
@@ -384,6 +385,15 @@ function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEn
 
   return (
     <g>
+      {/* Action Panel (Buy/Auction/Card/Trade) */}
+      {actionPanel && (
+        <foreignObject x={mid - 100} y={dy - 110} width={200} height={100}>
+          <div className="flex items-center justify-center h-full w-full">
+            {actionPanel}
+          </div>
+        </foreignObject>
+      )}
+
       {/* Dice 1 */}
       <motion.g
         animate={rolling ? { rotate: [-15, 15, -10, 10, 0] } : { rotate: 0 }}
@@ -471,13 +481,15 @@ export function GameBoard({
   isMyTurn = false,
   phase = "waiting", // Default phase
   onEndTurn, // New prop for ending turn
+  actionPanel,
 }: {
   onRoll?: () => void;
   canRoll?: boolean;
   rolling?: boolean;
   isMyTurn?: boolean;
   phase?: string;
-  onEndTurn?: () => void; // Make it optional for now, but will be required by game logic
+  onEndTurn?: () => void;
+  actionPanel?: ReactNode;
 } = {}) {
   const { gameState, selectedTileId, selectTile, toggleTileDetail } = useGameStore();
   const tiles = useMemo(() => BOARD_TILES, []);
@@ -596,6 +608,7 @@ export function GameBoard({
             phase={phase}
             onRoll={onRoll}
             onEndTurn={onEndTurn}
+            actionPanel={actionPanel}
           />
         )}
       </svg>
