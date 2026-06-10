@@ -108,11 +108,15 @@ function ActivityLog() {
 export default function GamePage() {
   const { gameState, myPlayerId, roomCode, isConnected } = useGameStore();
   const {
-    rollDice, buyProperty, declinePurchase, auctionBid, processCard,
+    socket, rollDice, buyProperty, declinePurchase, auctionBid, processCard,
     useJailCard, payJailFine, respondTrade, sendChat,
     buildHouse, buildHotel, mortgageProperty, proposeTrade,
   } = useSocket();
   const router = useRouter();
+
+  const handleEndTurn = useCallback(() => {
+    socket?.emit("endTurn");
+  }, [socket]);
 
   const [chatInput, setChatInput]     = useState("");
   const [bidAmount, setBidAmount]     = useState(10);
@@ -351,8 +355,8 @@ export default function GamePage() {
       canRoll={canRoll}
       rolling={rolling}
       isMyTurn={isMyTurn}
-      phase={gameState.phase} // Pass phase to control button visibility
-      onEndTurn={() => console.log("End Turn clicked")} // Placeholder for actual end turn logic
+      phase={gameState.phase}
+      onEndTurn={handleEndTurn}
     />
               <TileDetail/>
             </div>

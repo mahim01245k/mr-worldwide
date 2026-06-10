@@ -345,7 +345,7 @@ function PlayerToken({ player, cx, cy, ox, rotation }: {
     <motion.g
       animate={{ x: cx + ox, y: cy, rotate: rotation }}
       initial={false}
-      transition={{ type: "spring", stiffness: 180, damping: 20 }}
+      transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
     >
       <g transform="scale(0.4) translate(-32, -32)">
         <path d="M32 64c17.673 0 32-14.327 32-32C64 14.327 49.673 0 32 0 14.327 0 0 14.327 0 32c0 17.673 14.327 32 32 32Z" fill={color} />
