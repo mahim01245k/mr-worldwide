@@ -358,7 +358,7 @@ function PlayerToken({ player, cx, cy, ox, rotation }: {
 }
 
 // ── Dice in center ────────────────────────────────────────────────────────────
-function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEndTurn }: {
+function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEndTurn, actionPanel }: {
   values: [number, number]; rolling: boolean;
   canRoll: boolean; isMyTurn: boolean; phase: string;
   onRoll?: () => void;
