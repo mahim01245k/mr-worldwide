@@ -184,15 +184,19 @@ export default function GamePage() {
           <p className="text-[#cccccc] text-xs font-yanone">{myTile.subname} · ${myTile.price}</p>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <button onClick={() => buyProperty()}
           disabled={(myPlayer?.cash ?? 0) < (myTile.price ?? 0)}
-          className="flex-1 bg-[#00e701] hover:bg-[#00cc00] disabled:opacity-40 text-black font-bold py-1.5 rounded-lg text-xs font-yanone">
+          className="col-span-2 bg-[#00e701] hover:bg-[#00cc00] disabled:opacity-40 text-black font-bold py-2 rounded-lg text-sm font-yanone shadow-lg">
           Buy ${myTile.price}
         </button>
         <button onClick={() => declinePurchase()}
-          className="flex-1 bg-[#3a3a3a] hover:bg-[#4a4a4a] text-white font-bold py-1.5 rounded-lg text-xs font-yanone">
-          Auction 🔨
+          className="bg-[#3a3a3a] hover:bg-[#4a4a4a] text-white font-bold py-1.5 rounded-lg text-[10px] font-yanone uppercase tracking-wider">
+          Auction (You Sell) 🔨
+        </button>
+        <button onClick={() => handleEndTurn()}
+          className="bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888888] hover:text-white border border-white/10 font-bold py-1.5 rounded-lg text-[10px] font-yanone uppercase tracking-wider transition-colors">
+          Skip & End Turn ➜
         </button>
       </div>
     </div>

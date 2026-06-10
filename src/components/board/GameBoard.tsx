@@ -229,7 +229,7 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
               {/* City name */}
               <text
                 x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
-                fontSize={13.5} fill="#ffffff" fontWeight="400"
+                fontSize={16} fill="#ffffff" fontWeight="700"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
               >
                 {tile.name}
@@ -337,14 +337,14 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   );
 }
 // ── Player token ─────────────────────────────────────────────────────────────
-function PlayerToken({ player, cx, cy, ox, rotation }: {
+const PlayerToken = memo(({ player, cx, cy, ox, rotation }: {
   player: Player; cx: number; cy: number; ox: number; rotation: number;
-}) {
+}) => {
   const color = PLAYER_COLOR_HEX[player.color];
   return (
     <motion.g
       animate={{ x: cx + ox, y: cy, rotate: rotation }}
-      initial={false}
+      style={{ willChange: "transform", pointerEvents: "none" }}
       transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
     >
       <g transform="scale(0.4) translate(-32, -32)">
@@ -355,7 +355,7 @@ function PlayerToken({ player, cx, cy, ox, rotation }: {
       </g>
     </motion.g>
   );
-}
+});
 
 // ── Dice in center ────────────────────────────────────────────────────────────
 function CenterActions({ values, rolling, canRoll, isMyTurn, phase, onRoll, onEndTurn, actionPanel }: {

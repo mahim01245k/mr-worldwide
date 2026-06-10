@@ -51,7 +51,7 @@ export function TileDetail() {
                   </span>
                 )}
                 <div className={`${yanone.variable} font-sans`}>
-                  <h3 className="text-white font-black text-lg font-yanone">{tile.name}</h3>
+                  <h3 className="text-white font-black text-xl font-yanone">{tile.name}</h3>
                   <p className="text-[#cccccc] text-sm font-yanone">{tile.subname || (tile.type === "property" ? "CITY" : tile.type.toUpperCase())}</p>
                 </div>
               </div>
