@@ -351,8 +351,8 @@ export default function GamePage() {
       canRoll={canRoll}
       rolling={rolling}
       isMyTurn={isMyTurn}
-      phase={gameState.phase}
-      buyPanel={activePanel}
+      phase={gameState.phase} // Pass phase to control button visibility
+      onEndTurn={() => console.log("End Turn clicked")} // Placeholder for actual end turn logic
     />
               <TileDetail/>
             </div>
