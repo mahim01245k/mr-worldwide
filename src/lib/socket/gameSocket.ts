@@ -13,7 +13,20 @@ import {
   buildHotel,
   mortgageProperty,
   processCard,
+  advanceTurn,
 } from "../game/gameEngine";
+    socket.on("end-turn", () => {
+      try {
+        const roomCode = playerRooms.get(socket.id);
+        if (!roomCode) return;
+        let gameState = games.get(roomCode)!;
+        gameState = advanceTurn(gameState);
+        games.set(roomCode, gameState);
+        io.to(roomCode).emit("game-state", gameState);
+      } catch (err: any) {
+        socket.emit("error", { message: err.message });
+      }
+    });
 import { GameState } from "@/types/game";
 import { v4 as uuidv4 } from "uuid";
 

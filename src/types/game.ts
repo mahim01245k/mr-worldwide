@@ -50,6 +50,7 @@ export interface Auction {
   bids: { playerId: string; amount: number; timestamp: number }[];
   endsAt: number;
   status: "active" | "finished";
+  auctioneerId?: string;
 }
 
 export interface GameLog {

@@ -229,7 +229,7 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
               {/* City name */}
               <text
                 x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
-                fontSize={16} fill="#ffffff" fontWeight="700"
+                fontSize={18} fill="#ffffff" fontWeight="700"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
               >
                 {tile.name}
@@ -344,6 +344,7 @@ const PlayerToken = memo(({ player, cx, cy, ox, rotation }: {
   return (
     <motion.g
       animate={{ x: cx + ox, y: cy, rotate: rotation }}
+      initial={false}
       style={{ willChange: "transform", pointerEvents: "none" }}
       transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
     >
@@ -499,11 +500,6 @@ export function GameBoard({
   const { players, properties, currentPlayerIndex, diceValues } = gameState;
   const currentPlayer = players[currentPlayerIndex];
 
-  const byPos = players.reduce<Record<number, Player[]>>((acc, p) => {
-    if (!p.isBankrupt) { acc[p.position] = [...(acc[p.position] || []), p]; }
-    return acc;
-  }, {});
-
   const handleTileSelect = useCallback((id: number) => {
     selectTile(id);
     toggleTileDetail(true);
@@ -563,11 +559,21 @@ export function GameBoard({
           );
         })}
         <FlagLayer tiles={tiles} />
-        {/* Player tokens */}
-        {Object.entries(byPos).map(([posStr, posPlayers]) => {
-          const pos = parseInt(posStr);
+
+        {/* Player tokens - Flattened to preserve identity for animation */}
+        {players.map((player) => {
+          if (player.isBankrupt) return null;
+          
+          const pos = player.position;
           const [cx, cy] = getTokenCenter(pos);
 
+          // Calculate offset relative to others on this tile
+          const othersOnTile = players.filter(p => p.position === pos && !p.isBankrupt);
+          const idx = othersOnTile.findIndex(p => p.id === player.id);
+          const total = othersOnTile.length;
+          const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
+
+          // Rotation logic based on board side
           const tile = BOARD_TILES.find(t => t.id === pos);
           let baseRot = 0;
           if (tile) {
@@ -576,15 +582,18 @@ export function GameBoard({
             else if (tile.position === "bottom" || pos === 24) baseRot = 270;
             else if (tile.position === "left" || pos === 36) baseRot = 0;
           }
-          // Natural SVG orientation of the token (eyes at bottom) faces Down.
-          // We add 180 so that "baseRot = 0" (Left side) results in facing Up.
           const rotation = (baseRot + 180) % 360;
 
-          return posPlayers.map((player, idx) => {
-            const total = posPlayers.length;
-            const ox = total > 1 ? (idx - (total - 1) / 2) * 14 : 0;
-            return <PlayerToken key={player.id} player={player} cx={cx} cy={cy} ox={ox} rotation={rotation} />;
-          });
+          return (
+            <PlayerToken 
+              key={player.id} 
+              player={player} 
+              cx={cx} 
+              cy={cy} 
+              ox={ox} 
+              rotation={rotation} 
+            />
+          );
         })}
 
         {/* Current player pulse ring */}

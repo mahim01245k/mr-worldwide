@@ -478,6 +478,7 @@ const players = state.players.map((p) =>
 }
 
 export function startAuction(state: GameState, tileId: number): GameState {
+  const currentPlayer = state.players[state.currentPlayerIndex];
   return {
     ...state,
     phase: "auction",
@@ -488,6 +489,7 @@ export function startAuction(state: GameState, tileId: number): GameState {
       bids: [],
       endsAt: Date.now() + state.settings.auctionDuration * 1000,
       status: "active",
+      auctioneerId: currentPlayer.id,
     },
     log: [...state.log, createLog("system", `Auction started for ${BOARD_TILES.find(t => t.id === tileId)?.name}!`)],
     updatedAt: Date.now(),
@@ -738,7 +740,7 @@ function handleBankruptcy(state: GameState, bankruptId: string, creditorId?: str
   };
 }
 
-function advanceTurn(state: GameState): GameState {
+export function advanceTurn(state: GameState): GameState {
   const currentPlayer = state.players[state.currentPlayerIndex];
   const rolledDouble =
     state.diceValues[0] === state.diceValues[1] &&
