@@ -90,122 +90,225 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
   const layout = getTileLayout(tile);
   const { x, y, w, h, side, textRot, bandEdge } = layout;
 
+  const isPurchasable = ["property", "airport", "utility"].includes(tile.type);
+  const isOwned = !!ownerColor && !!ownership && !ownership.isMortgaged;
 
-  const isProperty = ["property", "airport", "utility"].includes(tile.type);
-
-  // Color for the band
-  const bandColor = (() => {
-    if (tile.color && tile.color !== "none") return COLOR_HEX[tile.color];
-    switch (tile.type) {
-      case "start": return "#00e701"; // Kick Green
-      case "vacation": return "#00ccff"; // Light Blue
-      case "go-to-prison": return "#ff4d4d"; // Red
-      case "prison": return "#9966ff"; // Purple
-      case "treasure": return "#ffcc00"; // Yellow
-      case "surprise": return "#9966ff"; // Purple
-      case "airport": return "#00ccff"; // Light Blue
-      case "tax": return "#ff9900"; // Orange
-      case "utility": return "#00ccff"; // Light Blue
-      default: return "#3a3a3a"; // Dark Grey
-    }
-  })();
-
-  const BAND = 14; // band thickness in px
-
-  // Band rect based on which edge
-  const bandRect = (() => {
-    switch (bandEdge) {
-      case "top": return { bx: 0, by: 0, bw: w, bh: BAND };
-      case "bottom": return { bx: 0, by: h - BAND, bw: w, bh: BAND };
-      case "left": return { bx: 0, by: 0, bw: BAND, bh: h };
-      case "right": return { bx: w - BAND, by: 0, bw: BAND, bh: h };
-    }
-  })();
-
-  // For rotated tiles, the "top" in the tile's local frame (after textRot) 
-  // is where the flag should go. We place content relative to tile center.
-  // The textRot rotates around the tile center.
-  const cx = useMemo(() => w / 2, [w]);
-  const cy = useMemo(() => h / 2, [h]);
-
-  // In the tile's local (pre-rotation) frame, figure out content dims
-  // For rotated tiles (left/right), the visual "height" is actually w, "width" is h
+  const cx = w / 2;
+  const cy = h / 2;
   const isRotated = textRot === 90 || textRot === -90;
-  const vW = isRotated ? h : w;  // visual width after rotation
-  const vH = isRotated ? w : h;  // visual height after rotation
+  const vW = isRotated ? h : w;
 
-  // Special icon for non-property non-corner tiles
   const specialEmoji = (() => {
     switch (tile.type) {
       case "treasure": return "💰";
       case "surprise": return "❓";
-      case "airport": return "✈️"; // Keep as emoji
-      case "utility": return tile.name.includes("Water") ? "💧" : "⛽"; // Keep as emoji
+      case "airport": return null;
+      case "utility": return tile.name.includes("Water") ? "💧" : "⛽";
       case "tax": return "💸";
-      case "start": return "▶▶"; // Keep as text
-      case "vacation": return "🏖️"; // Keep as emoji
+      case "start": return "▶▶";
+      case "vacation": return "🏖️";
       case "go-to-prison": return "☠️";
       case "prison": return "🔒";
       default: return null;
     }
   })();
-const radius = Math.max(1, vW * 0.9);
+
+  // --- Determine outward edge (away from board centre) ---
+  // bandEdge is the inward edge; we take the opposite.
+  let outwardEdge = "";
+  if (bandEdge === "bottom") outwardEdge = "top";
+  else if (bandEdge === "top") outwardEdge = "bottom";
+  else if (bandEdge === "left") outwardEdge = "right";
+  else if (bandEdge === "right") outwardEdge = "left";
+  else outwardEdge = "bottom";
+
+  // --- Owner bar dimensions ---
+  const barThickness = 24;
+  const radius = 8;
+  let barX = 0, barY = 0, barW = w, barH = barThickness;
+  let isVertical = false;
+
+  switch (outwardEdge) {
+    case "bottom":
+      barY = h - barThickness;
+      barW = w;
+      barH = barThickness;
+      isVertical = false;
+      break;
+    case "top":
+      barY = 0;
+      barW = w;
+      barH = barThickness;
+      isVertical = false;
+      break;
+    case "left":
+      barX = 0;
+      barY = 0;
+      barW = barThickness;
+      barH = h;
+      isVertical = true;
+      break;
+    case "right":
+      barX = w - barThickness;
+      barY = 0;
+      barW = barThickness;
+      barH = h;
+      isVertical = true;
+      break;
+    default:
+      barY = h - barThickness;
+  }
+
+  // --- Build path for rounded outer edge ---
+  const getBarPath = () => {
+    const r = radius;
+    if (isVertical) {
+      if (outwardEdge === "left") {
+        // Left edge: rounded on left side
+        return `M ${barX + barThickness} ${barY}
+                L ${barX + barThickness} ${barY + barH - r}
+                A ${r} ${r} 0 0 1 ${barX + barThickness - r} ${barY + barH}
+                L ${barX} ${barY + barH}
+                L ${barX} ${barY}
+                L ${barX + barThickness - r} ${barY}
+                A ${r} ${r} 0 0 1 ${barX + barThickness} ${barY + r} Z`;
+      } else if (outwardEdge === "right") {
+        // Right edge: rounded on right side
+        return `M ${barX} ${barY}
+                L ${barX} ${barY + barH}
+                L ${barX + barThickness - r} ${barY + barH}
+                A ${r} ${r} 0 0 1 ${barX + barThickness} ${barY + barH - r}
+                L ${barX + barThickness} ${barY + r}
+                A ${r} ${r} 0 0 1 ${barX + barThickness - r} ${barY}
+                L ${barX} ${barY} Z`;
+      }
+    } else {
+      if (outwardEdge === "top") {
+        // Top edge: rounded on top side
+        return `M ${barX} ${barY + barThickness}
+                L ${barX + barW - r} ${barY + barThickness}
+                A ${r} ${r} 0 0 0 ${barX + barW} ${barY + barThickness - r}
+                L ${barX + barW} ${barY}
+                L ${barX} ${barY}
+                L ${barX} ${barY + barThickness - r}
+                A ${r} ${r} 0 0 0 ${barX + r} ${barY + barThickness}
+                L ${barX} ${barY + barThickness} Z`;
+      } else if (outwardEdge === "bottom") {
+        // Bottom edge: rounded on bottom side
+        return `M ${barX} ${barY}
+                L ${barX + barW} ${barY}
+                L ${barX + barW} ${barY + barThickness - r}
+                A ${r} ${r} 0 0 1 ${barX + barW - r} ${barY + barThickness}
+                L ${barX + r} ${barY + barThickness}
+                A ${r} ${r} 0 0 1 ${barX} ${barY + barThickness - r}
+                L ${barX} ${barY} Z`;
+      }
+    }
+    return "";
+  };
+
+  const barFill = isOwned ? ownerColor : "#3a3a3a";
+  const price = tile.price;
+
+  // --- Price pill position (only on outward edge, when not owned) ---
+  let pillX = cx, pillY = cy;
+  let pillW = 46, pillH = 20;
+  let isPillHorizontal = true;
+
+  switch (outwardEdge) {
+    case "bottom":
+      pillY = h - 14;
+      break;
+    case "top":
+      pillY = 14;
+      break;
+    case "left":
+      pillX = 14;
+      pillY = cy;
+      pillW = 20;
+      pillH = 46;
+      isPillHorizontal = false;
+      break;
+    case "right":
+      pillX = w - 14;
+      pillY = cy;
+      pillW = 20;
+      pillH = 46;
+      isPillHorizontal = false;
+      break;
+    default:
+      pillY = h - 14;
+  }
+
+  // --- Airplane SVG for airports ---
+  const airplaneBodyPath = "M15 2 L15 6 L22 10 L24 10 L22 8 L20 8 L22 6 L24 6 L22 4 L20 4 L17 2 Z";
+  const airplaneWingPath = "M15 8 L15 14 L22 16 L24 16 L22 14 L20 14 L22 12 L24 12 L22 10 L20 10 L17 8 Z";
 
   return (
-    
     <g
       transform={`translate(${x},${y})`}
-      onClick={(e) => {
-        e.stopPropagation(); // Prevents bubbling issues
-        onSelect(tile.id);
-      }}
-      style={{ cursor: "pointer", pointerEvents: "all" }} // Ensure it catches all clicks
+      onClick={(e) => { e.stopPropagation(); onSelect(tile.id); }}
+      style={{ cursor: "pointer", pointerEvents: "all" }}
     >
       <defs>
         <clipPath id={`tile-clip-${tile.id}`}>
           <rect x={0} y={0} width={w} height={h} rx={10} />
         </clipPath>
         <clipPath id={`bg-flag-circle-${tile.id}`}>
-          <circle cx={cx} cy={cy} r={radius} />
+          <circle cx={cx} cy={cy} r={Math.max(1, vW * 0.9)} />
         </clipPath>
       </defs>
 
       {/* Base background */}
       <rect x={0} y={0} width={w} height={h}
         fill={isSelected ? "#1e1a3a" : "#13112a"}
-        stroke={isSelected ? "#00e701" : ownerColor ? ownerColor + "55" : "#3a3a3a"}
+        stroke={ownerColor ? ownerColor + "55" : "#3a3a3a"}
         strokeWidth={isSelected ? 2 : 1}
         rx={10}
-        style={{ shapeRendering: "crispEdges" }} // Performance boost for rects
       />
 
-      {/* Color band */}
-      {/* {!isCorner && bandRect && (
-        <rect x={bandRect.bx} y={bandRect.by} width={bandRect.bw} height={bandRect.bh}
-          fill={bandColor} rx={1} />
-      )} */}
-
-      {/* Corner colored background tint */}
-      {/* {isCorner && (
-        <rect x={0} y={0} width={w} height={h}
-          fill={bandColor} fillOpacity={0.15} rx={2} />
-      )} */}
-
       {/* Mortgage overlay */}
-      {ownership?.isMortgaged && ( // Keep as is, dark overlay is good
+      {ownership?.isMortgaged && (
         <rect x={0} y={0} width={w} height={h} fill="#000" fillOpacity={0.5} rx={10} />
       )}
+      {/* White gradient overlay for airports */}
+      {tile.type === "airport" && (
+        <rect x={0} y={0} width={w} height={h}
+          fill="url(#airport-grad)"
+          rx={10}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
+      {/* Utility color gradients */}
+      {tile.type === "utility" && (
+        <rect
+          x={0}
+          y={0}
+          width={w}
+          height={h}
+          fill={
+            tile.name.includes("Water")
+              ? "url(#water-grad)"
+              : tile.name.includes("Electric")
+                ? "url(#electric-grad)"
+                : tile.name.includes("Gas")
+                  ? "url(#gas-grad)"
+                  : "url(#water-grad)" // fallback
+          }
+          rx={10}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
 
-      {/* All content rotated around center */}
+
+      {/* Rotated content (flag, city name, etc.) */}
       <g clipPath={`url(#tile-clip-${tile.id})`}>
         <g transform={`rotate(${textRot}, ${cx}, ${cy})`}>
-
           {side === "corner" ? (
-            // ── Corner tiles ──────────────────────────────────────────────────
             <g>
               <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle"
                 fontSize={26} style={{ userSelect: "none" }}>
-                {specialEmoji} {/* Keep emojis */}
+                {specialEmoji}
               </text>
               <text x={cx} y={cy + 12} textAnchor="middle"
                 fontSize={9} fill="#ffffff" fontWeight="700"
@@ -218,59 +321,77 @@ const radius = Math.max(1, vW * 0.9);
               </text>
               {tile.type === "start" && (
                 <text x={cx} y={cy + 24} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={7} fill="#00e701"
-                  style={{ userSelect: "none" }}>
+                  fontSize={7} fill="#00e701" style={{ userSelect: "none" }}>
                   Collect $200
                 </text>
               )}
             </g>
-          ) : isProperty && tile.flagCode ? (
-            // ── Property tiles with flag ──────────────────────────────────────
+          ) : isPurchasable && tile.flagCode ? (
             <g>
-              <FlagIcon
-                code={tile.flagCode}
-                size={vW * 1.8}
-                isBackground={true}
-                x={cx - (vW * 1.8) / 2}
-                y={cy - (vW * 1.8) / 2}
-                clipPathId={`bg-flag-circle-${tile.id}`}
-                style={{ filter: "blur(6px)", opacity: 0.25, pointerEvents: "none" }}
-              />
-
-              {/* City name */}
-              <text
-                x={cx} y={side === "top" ? cy + 10 : cy - 2} textAnchor="middle"
-                fontSize={18} fill="#ffffff" fontWeight="400"
-                style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
-              >
-                {tile.name.split(" ").map((word, i, arr) => (
-                  <tspan key={i} x={cx} dy={i === 0 ? (arr.length > 1 ? "-0.3em" : "0.35em") : "1.1em"}>
-                    {word}
-                  </tspan>
-                ))}
-              </text>
-
-              {/* Price badge */}
-              {tile.price && (
-                <g>
-                  <rect x={cx - 20} y={side === "top" ? cy - 38 : cy + 22} width={40} height={16}
-                    fill="rgba(0,0,0,0.4)" rx={4} />
-                  <text x={cx} y={side === "top" ? cy - 30 : cy + 30} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={10} fill="#ffffff" fontWeight="700"
-                    style={{ userSelect: "none" }}>
-                    {tile.price}$
-                  </text>
+              {tile.type === "airport" ? (
+                <g
+                  transform={
+                    side === "top"
+                      ? `translate(${cx - 19}, ${cy + 5}) scale(1.1)`   // near top edge
+                      : side === "bottom"
+                        ? `translate(${cx - 19}, ${cy + 20}) scale(1.1)`   // near bottom edge
+                        : side === "left"
+                          ? `translate(${cx + 15}, ${cy - 20}) scale(1.1)`   // adjusted for left column (rotated)
+                          : side === "right"
+                            ? `translate(${cx - 50}, ${cy - 20}) scale(1.1)`   // adjusted for right column (rotated)
+                            : `translate(${cx - 19}, ${cy - 40}) scale(1.1)`
+                  }
+                >
+                  <path
+                    d="m21.352 13.742 2.973-12.863a.7.7 0 0 0-.684-.879h-3.412a.712.712 0 0 0-.6.334l-1.848 3.416h-2.9a.707.707 0 0 0-.708.7v2.35a.707.707 0 0 0 .708.7h.88l-3.286 6.219m0 2.562 3.286 6.219h-.88a.707.707 0 0 0-.708.7v2.344a.707.707 0 0 0 .708.7h2.9l1.848 3.416a.72.72 0 0 0 .6.334h3.412a.7.7 0 0 0 .684-.879l-2.973-12.863"
+                    fill="#c1c3cd"
+                    stroke="none"
+                  />
+                  <path
+                    d="M22.36 11.742a45.033 45.033 0 0 1 5.306.457l2.35-3.89a.714.714 0 0 1 .608-.34h2.514a.7.7 0 0 1 .691.844l-.974 4.851a1.352 1.352 0 0 1 0 2.672l.98 4.851a.705.705 0 0 1-.7.844h-2.514a.714.714 0 0 1-.608-.34l-2.35-3.89a45.033 45.033 0 0 1-5.306.457l-8.884.023h-7.337c-3.388 0-6.139-1.47-6.139-3.281s2.751-3.281 6.139-3.281h7.337Z"
+                    fill="#dde7ea"
+                    stroke="none"
+                  />
                 </g>
+              ) : tile.type === "property" && (
+                <FlagIcon
+                  code={tile.flagCode}
+                  size={vW * 1.8}
+                  isBackground={true}
+                  x={cx - (vW * 1.8) / 2}
+                  y={cy - (vW * 1.8) / 2}
+                  clipPathId={`bg-flag-circle-${tile.id}`}
+                  style={{ filter: "blur(6px)", opacity: 0.25, pointerEvents: "none" }}
+                />
               )}
+
+              {/* City / Company name */}
+              <text
+                x={cx}
+                y={side === "top" ? cy + 10 : (tile.type === "airport" ? cy + 8 : cy - 2)}
+                textAnchor="middle"
+                fontSize={18}
+                fill="#ffffff"
+                fontWeight="400"
+                style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif" }}
+              >
+                {tile.type === "utility" ? (
+                  tile.name.split(" ").map((word, i, arr) => (
+                    <tspan key={i} x={cx} dy={i === 0 ? (arr.length > 1 ? "-0.5em" : "0.35em") : "1.1em"}>
+                      {word}
+                    </tspan>
+                  ))
+                ) : (
+                  tile.name
+                )}
+              </text>
             </g>
           ) : (
-            // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
             <g>
               {specialEmoji && (
                 <text x={cx} y={side === "top" ? cy + 18 : cy - 10} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={tile.type === "tax" ? 14 : 18}
-                  style={{ userSelect: "none" }}>
-                  {specialEmoji} {/* Keep emojis */}
+                  fontSize={tile.type === "tax" ? 14 : 18} style={{ userSelect: "none" }}>
+                  {specialEmoji}
                 </text>
               )}
               <text x={cx} y={side === "top" ? cy + (specialEmoji ? -6 : 0) : cy + (specialEmoji ? 10 : 0)} textAnchor="middle"
@@ -284,33 +405,55 @@ const radius = Math.max(1, vW * 0.9);
               </text>
               {tile.type === "tax" && tile.taxAmount && (
                 <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
-                  fontSize={7} fill="#ff4d4d"
-                  style={{ userSelect: "none" }}>
+                  fontSize={7} fill="#ff4d4d" style={{ userSelect: "none" }}>
                   {tile.taxAmount < 1 ? `${tile.taxAmount * 100}%` : `$${tile.taxAmount}`}
                 </text>
-              )}
-              {tile.price && (
-                <g>
-                  <rect x={cx - 16} y={side === "top" ? cy - 36 : cy + 22} width={32} height={13}
-                    fill="rgba(0,0,0,0.4)" rx={3} />
-                  <text x={cx} y={side === "top" ? cy - 29 : cy + 29} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={8} fill="#ffffff" fontWeight="700"
-                    style={{ userSelect: "none" }}>
-                    ${tile.price}
-                  </text>
-                </g>
               )}
             </g>
           )}
         </g>
       </g>
 
-      {/* Owner dot (always in tile corner, not rotated) */}
-      {ownerColor && (
-        <circle cx={w - 7} cy={7} r={5} fill={ownerColor} stroke="#fff" strokeWidth={1} />
+      {/* Owner bar – drawn AFTER flag/text, only if owned (and not mortgaged) */}
+      {isPurchasable && !(side === "corner") && isOwned && (
+        <rect
+          x={barX}
+          y={barY}
+          width={barW}
+          height={barH}
+          rx={6}
+          fill={barFill}
+        />
       )}
 
-      {/* Buildings */}
+      {/* Price pill – only shown if tile is NOT owned and NOT mortgaged */}
+      {!isOwned && !ownership?.isMortgaged && price && (
+        <g>
+          <rect
+            x={pillX - pillW / 2}
+            y={pillY - pillH / 2}
+            width={pillW}
+            height={pillH}
+            fill="rgba(0,0,0,0.6)"
+            rx={6}
+          />
+          <text
+            x={pillX}
+            y={pillY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={isPillHorizontal ? 12 : 11}
+            fill="#ffffff"
+            fontWeight="bold"
+            transform={side === "left" ? `rotate(90, ${pillX}, ${pillY})` : side === "right" ? `rotate(-90, ${pillX}, ${pillY})` : ""}
+            style={{ userSelect: "none" }}
+          >
+            ${price}
+          </text>
+        </g>
+      )}
+
+      {/* Buildings (houses/hotel) */}
       {ownership && !ownership.isMortgaged && (
         ownership.hasHotel
           ? <rect x={4} y={h - 10} width={9} height={7} fill="#ef4444" rx={1} />
@@ -319,38 +462,31 @@ const radius = Math.max(1, vW * 0.9);
           )
       )}
 
-      {/* Selected glow */}
-      {isSelected && (
-        <rect x={0} y={0} width={w} height={h} fill="none"
-          stroke="#00e701" strokeWidth={2} rx={10} strokeOpacity={0.85} />
-      )}
+
     </g>
   );
 });
+
 
 
 function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   return (
     <>
       <defs>
-        {tiles.filter(t => t.flagCode).map(tile => (
+        {tiles.filter(t => t.flagCode && t.type !== "airport" && t.type !== "utility").map(tile => (
           <clipPath key={`fc-${tile.id}`} id={`fc-${tile.id}`}>
             <circle cx={0} cy={0} r={15} />
           </clipPath>
         ))}
       </defs>
-      {tiles.filter(t => t.flagCode).map(tile => {
+      {tiles.filter(t => t.flagCode && t.type !== "airport" && t.type !== "utility").map(tile => {
         const center = getFlagCenter(tile);
         if (!center) return null;
         const [fx, fy] = center;
-
-        // Apply rotation to flags based on their side of the board
         const { side } = getTileLayout(tile);
         let rot = 0;
         if (side === "left") rot = 90;
         else if (side === "right") rot = -90;
-        // Top and bottom rows remain at 0° as requested
-
         return (
           <g key={`flag-${tile.id}`} transform={`translate(${fx},${fy}) rotate(${rot})`} style={{ pointerEvents: "none", filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))" }}>
             <FlagIcon
@@ -365,6 +501,8 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
     </>
   );
 }
+
+
 // ── Player token ─────────────────────────────────────────────────────────────
 const PlayerToken = memo(({ player, cx, cy, ox, rotation }: {
   player: Player; cx: number; cy: number; ox: number; rotation: number;
@@ -538,6 +676,8 @@ export function GameBoard({
     <div className="w-full h-full flex items-center justify-center">
       <svg
         viewBox={`0 0 ${BS} ${BS}`}
+        shapeRendering="geometricPrecision"
+
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
         style={{
@@ -562,6 +702,29 @@ export function GameBoard({
               <feMergeNode in="SourceGraphic"></feMergeNode>
             </feMerge>
           </filter>
+          {/* <!-- Water Company – Cyan --> */}
+          <radialGradient id="water-grad" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="#00bcd4" stopOpacity="0" />
+            <stop offset="100%" stopColor="#00bcd4" stopOpacity="0.7" />
+          </radialGradient>
+
+          {/* <!-- Electric Company – Yellow --> */}
+          <radialGradient id="electric-grad" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="#ffcc00" stopOpacity="0" />
+            <stop offset="100%" stopColor="#ffcc00" stopOpacity="0.7" />
+          </radialGradient>
+
+          {/* <!-- Gas Company – Orange --> */}
+          <radialGradient id="gas-grad" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="#ff6600" stopOpacity="0" />
+            <stop offset="100%" stopColor="#ff6600" stopOpacity="0.7" />
+          </radialGradient>
+
+          {/* <!-- Airport – White glow --> */}
+          <radialGradient id="airport-grad" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.3" />
+          </radialGradient>
         </defs>
 
         {/* Board background */}
@@ -592,7 +755,7 @@ export function GameBoard({
         {/* Player tokens - Flattened to preserve identity for animation */}
         {players.map((player) => {
           if (player.isBankrupt) return null;
-          
+
           const pos = player.position;
           const [cx, cy] = getTokenCenter(pos);
 
@@ -614,13 +777,13 @@ export function GameBoard({
           const rotation = (baseRot + 180) % 360;
 
           return (
-            <PlayerToken 
-              key={player.id} 
-              player={player} 
-              cx={cx} 
-              cy={cy} 
-              ox={ox} 
-              rotation={rotation} 
+            <PlayerToken
+              key={player.id}
+              player={player}
+              cx={cx}
+              cy={cy}
+              ox={ox}
+              rotation={rotation}
             />
           );
         })}
