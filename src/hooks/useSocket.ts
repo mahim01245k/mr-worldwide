@@ -90,9 +90,8 @@ export function useSocket() {
 
   return {
     socket,
-    createRoom: (playerName: string) => emit("create-room", { playerName }),
-    joinRoom: (roomCode: string, playerName: string) => emit("join-room", { roomCode, playerName }),
-    startGame: () => emit("start-game"),
+    createRoom: (playerName: string, color?: string) => emit("create-room", { playerName, color }),
+    joinRoom: (roomCode: string, playerName: string, color?: string) => emit("join-room", { roomCode, playerName, color }), startGame: () => emit("start-game"),
     rollDice: () => emit("roll-dice"),
     buyProperty: () => emit("buy-property"),
     declinePurchase: () => emit("decline-purchase"),
@@ -107,5 +106,8 @@ export function useSocket() {
     proposeTrade: (tradeData: any) => emit("propose-trade", tradeData),
     respondTrade: (accept: boolean) => emit("respond-trade", { accept }),
     sendChat: (message: string) => emit("send-chat", { message }),
+    setColor: (color: string) => emit("set-color", { color }),
+
+
   };
 }

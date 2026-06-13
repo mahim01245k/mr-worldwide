@@ -8,19 +8,20 @@ import { Copy, Check } from "lucide-react";
 
 export default function LobbyPage() {
   const router = useRouter();
-  const { createRoom, joinRoom, startGame } = useSocket();
-  const { gameState, myPlayerId, roomCode, isConnected } = useGameStore();
+  const { createRoom, joinRoom } = useSocket();
+  const { gameState, roomCode, isConnected } = useGameStore();
   const [playerName, setPlayerName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [mode, setMode] = useState<"menu" | "create" | "join">("menu");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
-  const isHost = gameState?.players[0]?.id === myPlayerId;
-
+  // Redirect to game as soon as we have a roomCode (room created or joined)
   useEffect(() => {
-    if (gameState?.phase && gameState.phase !== "waiting") router.push("/game");
-  }, [gameState?.phase, router]);
+    if (roomCode) {
+      router.push("/game");
+    }
+  }, [roomCode, router]);
 
   const handleCreate = () => {
     if (!playerName.trim()) { setError("Enter your name"); return; }
@@ -39,86 +40,10 @@ export default function LobbyPage() {
     if (roomCode) { navigator.clipboard.writeText(roomCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }
   };
 
-  // Waiting room
-  if (gameState?.phase === "waiting" && roomCode) {
-    const COLORS = ["#ff7ca0","#ffc73f","#7bed9f","#74b9ff","#a29bfe","#fd79a8"];
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "radial-gradient(ellipse at 30% 40%, #1a0e35 0%, #0a0816 70%)" }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-4xl font-black text-white tracking-tight">
-              MR.<span className="text-violet-400">WORLDWIDE</span>
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">Global Monopoly</p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ background: "#15132a" }}>
-            {/* Share game */}
-            <div className="p-5 border-b border-white/10">
-              <p className="text-white font-bold mb-3 flex items-center gap-2">
-                Share this game
-                <span className="text-slate-500 text-xs font-normal">Click to copy the room link</span>
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-[#0f0d20] border border-white/10 rounded-xl px-4 py-2.5 flex items-center gap-2">
-                  <span className="text-slate-300 text-sm flex-1">{typeof window !== "undefined" ? window.location.origin : ""}/room/{roomCode}</span>
-                  <button onClick={handleCopy} className="text-slate-400 hover:text-white ml-2">
-                    {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Players */}
-            <div className="p-5">
-              <p className="text-slate-400 text-xs uppercase tracking-wider mb-3">Players ({gameState.players.length}/6)</p>
-              <div className="space-y-2 mb-5">
-                {gameState.players.map((player, i) => (
-                  <motion.div key={player.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    className="flex items-center gap-3 rounded-xl p-3"
-                    style={{ background: `${COLORS[i] || "#a29bfe"}10`, border: `1px solid ${COLORS[i] || "#a29bfe"}25` }}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl border-2"
-                      style={{ borderColor: COLORS[i] || "#a29bfe", background: `${COLORS[i] || "#a29bfe"}20` }}>
-                      {["🚀","🎩","🦊","🐉","🌟","🏆"][i]}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white font-bold text-sm">{player.name}</p>
-                      <p className="text-slate-500 text-xs">
-                        {i === 0 ? "👑 Host" : "Ready"}
-                        {player.id === myPlayerId ? " · you" : ""}
-                      </p>
-                    </div>
-                    {!player.isConnected && <span className="text-red-400 text-xs">Disconnected</span>}
-                  </motion.div>
-                ))}
-              </div>
-
-              {isHost ? (
-                <motion.button onClick={() => startGame()} disabled={gameState.players.length < 1}
-                  className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-40 text-white font-black text-lg py-4 rounded-xl transition-all"
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                  Start Game 🚀
-                </motion.button>
-              ) : (
-                <div className="text-center text-slate-400 py-3">
-                  <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                    Waiting for host to start...
-                  </motion.span>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: "radial-gradient(ellipse at 30% 40%, #1a0e35 0%, #0a0816 70%)" }}>
-      {/* Background rings */}
+      {/* Background rings (unchanged) */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(8)].map((_, i) => (
           <motion.div key={i} className="absolute rounded-full border border-violet-900/15"
@@ -129,7 +54,6 @@ export default function LobbyPage() {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <motion.div className="text-7xl mb-4" animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 5, repeat: Infinity }}>
             🌍

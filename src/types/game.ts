@@ -19,6 +19,7 @@ export interface Player {
   hotelsOwned: number;
   lastDice: [number, number];
   consecutiveDoubles: number;
+  ready?: boolean;
 }
 
 export interface PropertyOwnership {

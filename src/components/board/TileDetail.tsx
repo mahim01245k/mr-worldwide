@@ -4,6 +4,7 @@ import { useGameStore } from "@/lib/store/gameStore";
 import { Yanone_Kaffeesatz } from "next/font/google"; // Import Yanone Kaffeesatz
 import { BOARD_TILES, COLOR_HEX } from "@/lib/game/boardData";
 import { PLAYER_COLOR_HEX } from "@/types/game";
+import { DivFlagIcon } from "@/components/ui/DivFlagIcon";
 import { X } from "lucide-react";
 
 // Define Yanone Kaffeesatz at the module level to fix build errors
@@ -39,12 +40,7 @@ export function TileDetail() {
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 {tile.flagCode ? (
-                  <div className="w-12 h-12 rounded-full overflow-hidden shadow-lg flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-                      alt={tile.subname || tile.name}
-                      className="w-full h-full object-cover" />
-                  </div>
+                  <DivFlagIcon code={tile.flagCode} size={48} />
                 ) : (
                   <span className="text-4xl">
                     {tile.type === "treasure" ? "💰" : tile.type === "surprise" ? "❓" : tile.type === "airport" ? "✈️" : tile.type === "tax" ? "💸" : tile.type === "start" ? "▶️" : tile.type === "vacation" ? "🏖️" : tile.type === "go-to-prison" ? "☠️" : "🏙️"}

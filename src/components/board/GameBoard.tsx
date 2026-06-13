@@ -3,11 +3,12 @@ import { type ReactNode, useMemo, memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { BOARD_TILES, COLOR_HEX, BoardTile } from "@/lib/game/boardData";
 import { useGameStore } from "@/lib/store/gameStore";
+import { FlagIcon } from "@/components/ui/FlagIcon";
 import { Player, PropertyOwnership, PLAYER_COLOR_HEX } from "@/types/game";
 
 // ── Board constants ──────────────────────────────────────────────────────────
 const BS = 900;   // board size
-const CS = 104;   // corner tile size
+const CS = 100;   // corner tile size
 // 11 tiles per non-corner side (from the image: bottom has 11 non-corner tiles)
 const TW = (BS - CS * 2) / 11;  // ~62.9px non-corner tile width
 const TH = CS;                   // tile height = corner size
@@ -42,7 +43,7 @@ function getTileLayout(tile: BoardTile): {
 
   // ── Top row: ids 1–11, left→right ──────────────────────────────────────
   if (position === "top") {
-    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 180, bandEdge: "bottom" };
+    return { x: CS + index * TW, y: 0, w: TW, h: CS, side: "top", textRot: 0, bandEdge: "bottom" };
   }
 
   // ── Right col: ids 13–23, top→bottom ───────────────────────────────────
@@ -88,6 +89,7 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
 }) => {
   const layout = getTileLayout(tile);
   const { x, y, w, h, side, textRot, bandEdge } = layout;
+
 
   const isProperty = ["property", "airport", "utility"].includes(tile.type);
 
@@ -147,8 +149,10 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
       default: return null;
     }
   })();
+const radius = Math.max(1, vW * 0.9);
 
   return (
+    
     <g
       transform={`translate(${x},${y})`}
       onClick={(e) => {
@@ -160,6 +164,9 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
       <defs>
         <clipPath id={`tile-clip-${tile.id}`}>
           <rect x={0} y={0} width={w} height={h} rx={10} />
+        </clipPath>
+        <clipPath id={`bg-flag-circle-${tile.id}`}>
+          <circle cx={cx} cy={cy} r={radius} />
         </clipPath>
       </defs>
 
@@ -200,10 +207,14 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
                 fontSize={26} style={{ userSelect: "none" }}>
                 {specialEmoji} {/* Keep emojis */}
               </text>
-              <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
+              <text x={cx} y={cy + 12} textAnchor="middle"
                 fontSize={9} fill="#ffffff" fontWeight="700"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
-                {tile.name.toUpperCase()}
+                {tile.name.toUpperCase().split(" ").map((word, i, arr) => (
+                  <tspan key={i} x={cx} dy={i === 0 ? (arr.length > 1 ? "-0.2em" : "0.35em") : "1.1em"}>
+                    {word}
+                  </tspan>
+                ))}
               </text>
               {tile.type === "start" && (
                 <text x={cx} y={cy + 24} textAnchor="middle" dominantBaseline="middle"
@@ -216,31 +227,35 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
           ) : isProperty && tile.flagCode ? (
             // ── Property tiles with flag ──────────────────────────────────────
             <g>
-              <image
-                href={`https://flagcdn.com/w80/${tile.flagCode.toLowerCase()}.png`}
-                x={cx - (vW * 1.2) / 2}
-                y={cy - (vH * 1.2) / 2}
-                width={vW * 1.2}
-                height={vH * 1.2}
-                preserveAspectRatio="xMidYMid slice"
-                style={{ filter: "blur(4px)", opacity: 0.18, pointerEvents: "none" }}
+              <FlagIcon
+                code={tile.flagCode}
+                size={vW * 1.8}
+                isBackground={true}
+                x={cx - (vW * 1.8) / 2}
+                y={cy - (vW * 1.8) / 2}
+                clipPathId={`bg-flag-circle-${tile.id}`}
+                style={{ filter: "blur(6px)", opacity: 0.25, pointerEvents: "none" }}
               />
 
               {/* City name */}
               <text
-                x={cx} y={cy - 2} textAnchor="middle" dominantBaseline="middle"
-                fontSize={18} fill="#ffffff" fontWeight="700"
+                x={cx} y={side === "top" ? cy + 10 : cy - 2} textAnchor="middle"
+                fontSize={18} fill="#ffffff" fontWeight="400"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), Yanone Kaffeesatz, sans-serif", filter: "url(#richup-text-shadow)" }}
               >
-                {tile.name}
+                {tile.name.split(" ").map((word, i, arr) => (
+                  <tspan key={i} x={cx} dy={i === 0 ? (arr.length > 1 ? "-0.3em" : "0.35em") : "1.1em"}>
+                    {word}
+                  </tspan>
+                ))}
               </text>
 
               {/* Price badge */}
               {tile.price && (
                 <g>
-                  <rect x={cx - 20} y={cy + 22} width={40} height={16}
+                  <rect x={cx - 20} y={side === "top" ? cy - 38 : cy + 22} width={40} height={16}
                     fill="rgba(0,0,0,0.4)" rx={4} />
-                  <text x={cx} y={cy + 30} textAnchor="middle" dominantBaseline="middle"
+                  <text x={cx} y={side === "top" ? cy - 30 : cy + 30} textAnchor="middle" dominantBaseline="middle"
                     fontSize={10} fill="#ffffff" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     {tile.price}$
@@ -252,16 +267,20 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
             // ── Special tiles (treasure, surprise, tax, airport, utility) ─────
             <g>
               {specialEmoji && (
-                <text x={cx} y={cy - 10} textAnchor="middle" dominantBaseline="middle"
+                <text x={cx} y={side === "top" ? cy + 18 : cy - 10} textAnchor="middle" dominantBaseline="middle"
                   fontSize={tile.type === "tax" ? 14 : 18}
                   style={{ userSelect: "none" }}>
                   {specialEmoji} {/* Keep emojis */}
                 </text>
               )}
-              <text x={cx} y={cy + (specialEmoji ? 10 : 0)} textAnchor="middle" dominantBaseline="middle"
+              <text x={cx} y={side === "top" ? cy + (specialEmoji ? -6 : 0) : cy + (specialEmoji ? 10 : 0)} textAnchor="middle"
                 fontSize={7.5} fill="#cccccc" fontWeight="700"
                 style={{ userSelect: "none", fontFamily: "var(--font-yanone), sans-serif" }}>
-                {tile.name}
+                {tile.name.split(" ").map((word, i, arr) => (
+                  <tspan key={i} x={cx} dy={i === 0 ? (arr.length > 1 ? "-0.2em" : "0.35em") : "1.1em"}>
+                    {word}
+                  </tspan>
+                ))}
               </text>
               {tile.type === "tax" && tile.taxAmount && (
                 <text x={cx} y={cy + 21} textAnchor="middle" dominantBaseline="middle"
@@ -272,9 +291,9 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
               )}
               {tile.price && (
                 <g>
-                  <rect x={cx - 16} y={cy + 22} width={32} height={13}
+                  <rect x={cx - 16} y={side === "top" ? cy - 36 : cy + 22} width={32} height={13}
                     fill="rgba(0,0,0,0.4)" rx={3} />
-                  <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
+                  <text x={cx} y={side === "top" ? cy - 29 : cy + 29} textAnchor="middle" dominantBaseline="middle"
                     fontSize={8} fill="#ffffff" fontWeight="700"
                     style={{ userSelect: "none" }}>
                     ${tile.price}
@@ -308,6 +327,8 @@ const TileCard = memo(({ tile, ownership, ownerColor, isSelected, onSelect }: {
     </g>
   );
 });
+
+
 function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
   return (
     <>
@@ -322,13 +343,21 @@ function FlagLayer({ tiles }: { tiles: BoardTile[] }) {
         const center = getFlagCenter(tile);
         if (!center) return null;
         const [fx, fy] = center;
+
+        // Apply rotation to flags based on their side of the board
+        const { side } = getTileLayout(tile);
+        let rot = 0;
+        if (side === "left") rot = 90;
+        else if (side === "right") rot = -90;
+        // Top and bottom rows remain at 0° as requested
+
         return (
-          <g key={`flag-${tile.id}`} transform={`translate(${fx},${fy})`} style={{ pointerEvents: "none", filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))" }}>
-            <image
-              href={`https://flagcdn.com/w80/${tile.flagCode!.toLowerCase()}.png`}
-              x={-15} y={-15} width={30} height={30}
-              clipPath={`url(#fc-${tile.id})`}
-              preserveAspectRatio="xMidYMid slice"
+          <g key={`flag-${tile.id}`} transform={`translate(${fx},${fy}) rotate(${rot})`} style={{ pointerEvents: "none", filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))" }}>
+            <FlagIcon
+              code={tile.flagCode!}
+              size={30}
+              x={-15} y={-15}
+              clipPathId={`fc-${tile.id}`}
             />
           </g>
         );

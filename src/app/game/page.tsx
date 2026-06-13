@@ -7,7 +7,7 @@ import { useGameStore } from "@/lib/store/gameStore";
 import { useSocket } from "@/hooks/useSocket";
 import { GameBoard } from "@/components/board/GameBoard";
 import { Notifications } from "@/components/ui/Notifications";
-import { PLAYER_COLOR_HEX } from "@/types/game";
+import { PLAYER_COLORS, PLAYER_COLOR_HEX } from "@/types/game";
 import { BOARD_TILES } from "@/lib/game/boardData";
 import { Copy, RotateCcw, Send, Home, Hotel, DollarSign, Trophy } from "lucide-react";
 import { TileDetail } from "@/components/board/TileDetail";
@@ -36,7 +36,7 @@ function GameOverModal() {
         <div className="space-y-2 mb-6">
           {ranked.map((player, i) => (
             <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl ${i === 0 ? "bg-yellow-900/30 border border-yellow-700/40" : "bg-slate-800/60"}`}>
-              <span className="text-xl">{["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"][i]}</span>
+              <span className="text-xl">{["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣"][i]}</span>
               <span className="text-lg">{player.avatar}</span>
               <span className="text-white font-bold flex-1 text-left">{player.name}</span>
               <span className="text-yellow-400 font-bold">${player.netWorth.toLocaleString()}</span>
@@ -110,7 +110,7 @@ export default function GamePage() {
   const {
     socket, rollDice, buyProperty, declinePurchase, auctionBid, processCard,
     useJailCard, payJailFine, respondTrade, sendChat,
-    buildHouse, buildHotel, mortgageProperty, proposeTrade,
+    buildHouse, buildHotel, mortgageProperty, proposeTrade, startGame, setColor,
   } = useSocket();
   const router = useRouter();
 
@@ -118,14 +118,15 @@ export default function GamePage() {
     console.log("Emitting endTurn event for player:", myPlayerId);
     socket?.emit("endTurn");
   }, [socket]);
+  const [selectedColor, setSelectedColor] = useState<typeof PLAYER_COLORS[number]>(PLAYER_COLORS[0]);
 
-  const [chatInput, setChatInput]     = useState("");
-  const [bidAmount, setBidAmount]     = useState(10);
-  const [rolling, setRolling]         = useState(false);
-  const [copied, setCopied]           = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [bidAmount, setBidAmount] = useState(10);
+  const [rolling, setRolling] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [showTradeForm, setShowTradeForm] = useState(false);
   const [tradeTarget, setTradeTarget] = useState("");
-  const [tradeCash, setTradeCash]     = useState(0);
+  const [tradeCash, setTradeCash] = useState(0);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (!gameState) router.push("/lobby"); }, [gameState, router]);
@@ -142,11 +143,11 @@ export default function GamePage() {
     </div>
   );
 
-  const myPlayer       = gameState.players.find(p => p.id === myPlayerId);
-  const currentPlayer  = gameState.players[gameState.currentPlayerIndex];
-  const isMyTurn       = currentPlayer?.id === myPlayerId;
-  const canRoll        = isMyTurn && gameState.phase === "rolling";
-  const myProps        = gameState.properties.filter(p => p.ownerId === myPlayerId);
+  const myPlayer = gameState.players.find(p => p.id === myPlayerId);
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const isMyTurn = currentPlayer?.id === myPlayerId;
+  const canRoll = isMyTurn && gameState.phase === "rolling";
+  const myProps = gameState.properties.filter(p => p.ownerId === myPlayerId);
 
   const handleRoll = () => {
     if (!canRoll || rolling) return;
@@ -170,7 +171,7 @@ export default function GamePage() {
 
   // Buy panel rendered INSIDE the SVG board (no bottom bar)
   const myPosition = myPlayer?.position ?? 0;
-  const myTile     = BOARD_TILES.find(t => t.id === myPosition);
+  const myTile = BOARD_TILES.find(t => t.id === myPosition);
 
   const buyPanel = gameState.phase === "buying" && isMyTurn && myTile ? (
     <div className="bg-[#282828]/95 border border-[#3a3a3a] rounded-xl p-3 w-full backdrop-blur-sm">
@@ -356,15 +357,114 @@ export default function GamePage() {
           <div className="flex-1 w-full flex items-center justify-center min-h-0 p-2">
             <div className="w-full h-full max-w-[min(100%,calc(100vh-2rem))] max-h-[min(100%,calc(100vw-36rem))] aspect-square relative">
               <GameBoard
-      onRoll={handleRoll}
-      canRoll={canRoll}
-      rolling={rolling}
-      isMyTurn={isMyTurn}
-      phase={gameState.phase}
-      actionPanel={activePanel}
-      onEndTurn={handleEndTurn}
-    />
-              <TileDetail/>
+                onRoll={handleRoll}
+                canRoll={canRoll}
+                rolling={rolling}
+                isMyTurn={isMyTurn}
+                phase={gameState.phase}
+                actionPanel={activePanel}
+                onEndTurn={handleEndTurn}
+              />
+              <TileDetail />
+              {gameState.phase === "waiting" && (() => {
+                const myPlayer = gameState.players.find(p => p.id === myPlayerId);
+                const isHost = myPlayerId === gameState.players[0]?.id;
+                const allReady = gameState.players.length > 0 && gameState.players.every(p => p.ready);
+                return (
+                  <div className="absolute inset-0 backdrop-blur-md bg-black/60 flex items-center justify-center z-50 rounded-xl">
+                    <div className="bg-[#1e1b2e]/90 border border-purple-500/30 rounded-2xl p-6 w-96 max-w-[90vw] shadow-2xl">
+                      <h2 className="text-2xl font-bold text-center text-white mb-2">Game Lobby</h2>
+                      <div className="text-center text-sm text-purple-300 mb-4">
+                        Room: <span className="font-mono bg-black/40 px-2 py-1 rounded">{roomCode}</span>
+                      </div>
+
+                      {/* Players list with ready status */}
+                      <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+                        {gameState.players.map((player, idx) => (
+                          <div key={player.id} className="flex items-center gap-3 bg-black/30 rounded-lg p-2">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-lg border-2"
+                              style={{ borderColor: PLAYER_COLOR_HEX[player.color], background: `${PLAYER_COLOR_HEX[player.color]}20` }}
+                            >
+                              {player.avatar}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-white font-medium">{player.name}</p>
+                              <p className="text-xs text-purple-300">
+                                {idx === 0 ? "👑 Host" : "Player"} {player.id === myPlayerId && "(you)"}
+                              </p>
+                            </div>
+                            {player.ready ? (
+                              <span className="text-green-400 text-xs">✓ Ready</span>
+                            ) : (
+                              <span className="text-yellow-400 text-xs animate-pulse">Joining...</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Color picker + Join button for current player if not ready */}
+                      {myPlayer && !myPlayer.ready && (
+                        <div className="border-t border-white/10 pt-4 mt-2">
+                          <p className="text-white text-sm mb-2">Choose your color:</p>
+                          <div className="flex gap-2 flex-wrap justify-center mb-3">
+                            {PLAYER_COLORS.map(color => {
+                              const taken = gameState.players.some(p => p.color === color && p.id !== myPlayer.id);
+                              return (
+                                <button
+                                  key={color}
+                                  onClick={() => setSelectedColor(color)}
+                                  disabled={taken}
+                                  className={`w-10 h-10 rounded-full border-2 transition-all ${selectedColor === color ? "border-white scale-110" : "border-transparent"
+                                    } ${taken ? "opacity-40 cursor-not-allowed" : ""}`}
+                                  style={{ backgroundColor: PLAYER_COLOR_HEX[color] }}
+                                />
+                              );
+                            })}
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (selectedColor && !gameState.players.some(p => p.color === selectedColor && p.id !== myPlayer.id)) {
+                                setColor(selectedColor);
+                              }
+                            }}
+                            disabled={!selectedColor}
+                            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2 rounded-xl"
+                          >
+                            Join Game 🚪
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Host start button – only enabled if all players are ready */}
+                      {isHost && myPlayer?.ready && (
+                        <button
+                          onClick={() => startGame()}
+                          disabled={!allReady}
+                          className={`w-full mt-4 py-3 rounded-xl font-bold transition-transform transform active:scale-95 ${allReady
+                              ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white"
+                              : "bg-gray-600 cursor-not-allowed text-gray-300"
+                            }`}
+                        >
+                          Start Game 🚀
+                        </button>
+                      )}
+
+                      {!isHost && myPlayer?.ready && (
+                        <div className="text-center text-white/70 animate-pulse mt-4">
+                          Waiting for host to start the game...
+                        </div>
+                      )}
+
+                      {!myPlayer?.ready && (
+                        <div className="text-center text-yellow-400/70 text-sm mt-2">
+                          Pick a color and click "Join Game" to play
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -478,7 +578,7 @@ export default function GamePage() {
                         <p className="text-[#cccccc] text-xs">
                           {ownership.hasHotel ? "🏨 Hotel"
                             : ownership.houses > 0 ? "🏠".repeat(ownership.houses)
-                            : "No buildings"}
+                              : "No buildings"}
                         </p>
                       </div>
                       {ownership.isMortgaged && <span className="text-[#ff4d4d] text-xs">M</span>}
